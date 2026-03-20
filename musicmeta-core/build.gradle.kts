@@ -21,7 +21,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            artifactId = "enrichment-core"
+            artifactId = "musicmeta-core"
         }
     }
 }

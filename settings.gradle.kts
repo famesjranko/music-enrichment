@@ -20,7 +20,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "music-enrichment"
+rootProject.name = "musicmeta"
 
-include(":enrichment-core")
-include(":enrichment-android")
+include(":musicmeta-core")
+include(":musicmeta-android")

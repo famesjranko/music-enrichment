@@ -1,6 +1,6 @@
-# music-enrichment
+# musicmeta
 
-A Kotlin library that enriches music metadata from multiple public APIs. Give it an album, artist, or track name and get back artwork, genres, lyrics, biographies, and more.
+A Kotlin library that looks up music metadata from multiple public APIs. Give it an album, artist, or track name and get back artwork, genres, lyrics, biographies, and more.
 
 Built for music player apps that want Spotify-quality metadata without a commercial API. Works on JVM and Android.
 
@@ -8,30 +8,30 @@ Built for music player apps that want Spotify-quality metadata without a commerc
 
 ```
 "OK Computer" by Radiohead
-         │
-         ▼
-┌─────────────────────┐
-│  EnrichmentEngine    │
-│                      │
-│  MusicBrainz ────────┼──▶ MBID, genre, label, release date
-│  Cover Art Archive ──┼──▶ Album artwork (via MBID)
-│  Wikidata ───────────┼──▶ Artist photo (via Wikidata ID)
-│  Wikipedia ──────────┼──▶ Artist biography
-│  LRCLIB ─────────────┼──▶ Synced + plain lyrics
-│  Deezer ─────────────┼──▶ Album art (fallback)
-│  iTunes ─────────────┼──▶ Album art (fallback)
-│  Last.fm ────────────┼──▶ Tags, similar artists
-│  ListenBrainz ───────┼──▶ Popularity, listen counts
-│  Fanart.tv ──────────┼──▶ Artist backgrounds, logos, CD art
-│  Discogs ────────────┼──▶ Label, release info
-└─────────────────────┘
+         |
+         v
++----------------------+
+|  EnrichmentEngine    |
+|                      |
+|  MusicBrainz --------+--> MBID, genre, label, release date
+|  Cover Art Archive --+--> Album artwork (via MBID)
+|  Wikidata -----------+--> Artist photo (via Wikidata ID)
+|  Wikipedia ----------+--> Artist biography
+|  LRCLIB -------------+--> Synced + plain lyrics
+|  Deezer -------------+--> Album art (fallback)
+|  iTunes -------------+--> Album art (fallback)
+|  Last.fm ------------+--> Tags, similar artists
+|  ListenBrainz -------+--> Popularity, listen counts
+|  Fanart.tv ----------+--> Artist backgrounds, logos, CD art
+|  Discogs ------------+--> Label, release info
++----------------------+
 ```
 
 The engine handles the hard parts: MusicBrainz resolves identifiers first, then downstream providers use those IDs for precise lookups. Rate limiting, circuit breaking, confidence scoring, and caching are all built in.
 
 ## Quick start
 
-### JVM (enrichment-core)
+### JVM (musicmeta-core)
 
 ```kotlin
 val httpClient = DefaultHttpClient("MyApp/1.0 (myapp.example.com)")
@@ -44,7 +44,7 @@ val engine = EnrichmentEngine.Builder()
     .addProvider(LrcLibProvider(httpClient, RateLimiter(200)))
     .build()
 
-// Enrich an album
+// Look up an album
 val results = engine.enrich(
     EnrichmentRequest.forAlbum("OK Computer", "Radiohead"),
     setOf(EnrichmentType.ALBUM_ART, EnrichmentType.GENRE),
@@ -73,23 +73,23 @@ val candidates = engine.search(
     EnrichmentRequest.forAlbum("Dark Side", "Pink Floyd"),
     limit = 5,
 )
-candidates.forEach { println("${it.title} (${it.year}) — score ${it.score}") }
+candidates.forEach { println("${it.title} (${it.year}) -- score ${it.score}") }
 ```
 
-### Android (enrichment-android)
+### Android (musicmeta-android)
 
-The `enrichment-android` module adds Room-backed persistent caching, a Hilt DI module, and a WorkManager base worker.
+The `musicmeta-android` module adds Room-backed persistent caching, a Hilt DI module, and a WorkManager base worker.
 
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation(project(":enrichment-core"))
-    implementation(project(":enrichment-android"))
+    implementation("com.github.famesjranko.musicmeta:musicmeta-core:v0.1.0")
+    implementation("com.github.famesjranko.musicmeta:musicmeta-android:v0.1.0")
 }
 ```
 
 ```kotlin
-// Hilt wiring — HiltEnrichmentModule auto-provides RoomEnrichmentCache
+// Hilt wiring -- HiltEnrichmentModule auto-provides RoomEnrichmentCache
 @Module
 @InstallIn(SingletonComponent::class)
 object MyEnrichmentModule {
@@ -113,10 +113,10 @@ object MyEnrichmentModule {
 
 | Module | Type | Dependencies | Purpose |
 |--------|------|-------------|---------|
-| `enrichment-core` | Pure JVM/Kotlin | coroutines, org.json, kotlinx.serialization | Engine, providers, HTTP, caching interface |
-| `enrichment-android` | Android library | Room, Hilt, WorkManager | Persistent cache, DI wiring, batch worker |
+| `musicmeta-core` | Pure JVM/Kotlin | coroutines, org.json, kotlinx.serialization | Engine, providers, HTTP, caching interface |
+| `musicmeta-android` | Android library | Room, Hilt, WorkManager | Persistent cache, DI wiring, batch worker |
 
-`enrichment-core` has zero Android dependencies. Use it in backend services, CLI tools, or desktop apps.
+`musicmeta-core` has zero Android dependencies. Use it in backend services, CLI tools, or desktop apps.
 
 ## Providers
 
@@ -138,13 +138,13 @@ Providers that require API keys report `isAvailable = false` until configured. T
 
 ## How it works
 
-1. **Identity resolution** — MusicBrainz searches by title/artist, returns a MusicBrainz ID (MBID) plus Wikidata/Wikipedia links. This step is optional but dramatically improves downstream accuracy.
+1. **Identity resolution** -- MusicBrainz searches by title/artist, returns a MusicBrainz ID (MBID) plus Wikidata/Wikipedia links. This step is optional but dramatically improves downstream accuracy.
 
-2. **Fan-out** — The engine sends the enriched request (now with IDs) to provider chains for each requested type. Providers are tried in priority order; if one returns `NotFound`, the next is tried.
+2. **Fan-out** -- The engine sends the enriched request (now with IDs) to provider chains for each requested type. Providers are tried in priority order; if one returns `NotFound`, the next is tried.
 
-3. **Confidence filtering** — Results below `minConfidence` (default 0.5) are discarded. MusicBrainz scores map directly to confidence. Search-based providers (Deezer, iTunes) get lower confidence.
+3. **Confidence filtering** -- Results below `minConfidence` (default 0.5) are discarded. MusicBrainz scores map directly to confidence. Search-based providers (Deezer, iTunes) get lower confidence.
 
-4. **Caching** — Successful results are cached (default 30-day TTL). The `InMemoryEnrichmentCache` is LRU-based; `RoomEnrichmentCache` persists to SQLite.
+4. **Caching** -- Successful results are cached (default 30-day TTL). The `InMemoryEnrichmentCache` is LRU-based; `RoomEnrichmentCache` persists to SQLite.
 
 ## Configuration
 
@@ -214,7 +214,7 @@ class MyProvider(
 Replace `DefaultHttpClient` (which uses `java.net.HttpURLConnection`) with OkHttp, Ktor, or anything else:
 
 ```kotlin
-class OkHttpEnrichmentClient(private val client: OkHttpClient) : HttpClient {
+class OkHttpMusicMetaClient(private val client: OkHttpClient) : HttpClient {
     override suspend fun fetchJson(url: String): JSONObject? { /* ... */ }
     override suspend fun fetchJsonArray(url: String): JSONArray? { /* ... */ }
     override suspend fun fetchBody(url: String): String? { /* ... */ }
@@ -236,65 +236,16 @@ class RedisEnrichmentCache(private val redis: RedisClient) : EnrichmentCache {
 
 ## Using in your project
 
-### Option 1: Git submodule
+### JitPack (recommended)
 
-```bash
-git submodule add https://github.com/youruser/music-enrichment.git
-```
-
-```kotlin
-// settings.gradle.kts
-includeBuild("music-enrichment") {
-    dependencySubstitution {
-        substitute(module("com.cascade:enrichment-core")).using(project(":enrichment-core"))
-        substitute(module("com.cascade:enrichment-android")).using(project(":enrichment-android"))
-    }
-}
-```
-
-### Option 2: Composite build
-
-Clone the repo alongside your project and use Gradle composite builds:
-
-```kotlin
-// settings.gradle.kts
-includeBuild("../music-enrichment")
-```
-
-```kotlin
-// build.gradle.kts
-dependencies {
-    implementation("com.cascade:enrichment-core")
-    implementation("com.cascade:enrichment-android") // Android only
-}
-```
-
-For this to work, add `group` to each module's build.gradle.kts:
-
-```kotlin
-// enrichment-core/build.gradle.kts
-group = "com.cascade"
-
-// enrichment-android/build.gradle.kts  (inside android { } block)
-group = "com.cascade"
-```
-
-### Option 3: Publish to Maven Local
-
-```bash
-./gradlew publishToMavenLocal
-```
-
-Then consume like any Maven dependency. (Publishing configuration not yet included — add the `maven-publish` plugin to each module's build.gradle.kts.)
-
-### Option 4: JitPack
-
-Push to GitHub and add JitPack as a repository. No publishing configuration needed — JitPack builds from source:
+Add JitPack as a repository and pull the dependency:
 
 ```kotlin
 // settings.gradle.kts
 dependencyResolutionManagement {
     repositories {
+        google()
+        mavenCentral()
         maven("https://jitpack.io")
     }
 }
@@ -303,14 +254,40 @@ dependencyResolutionManagement {
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.github.youruser.music-enrichment:enrichment-core:main-SNAPSHOT")
+    implementation("com.github.famesjranko.musicmeta:musicmeta-core:v0.1.0")
+    implementation("com.github.famesjranko.musicmeta:musicmeta-android:v0.1.0") // Android only
 }
 ```
+
+### Composite build
+
+Clone the repo alongside your project:
+
+```kotlin
+// settings.gradle.kts
+includeBuild("../musicmeta")
+```
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("com.landofoz:musicmeta-core")
+    implementation("com.landofoz:musicmeta-android")
+}
+```
+
+### Maven Local
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+Then consume as `com.landofoz:musicmeta-core:0.1.0` from `mavenLocal()`.
 
 ## Requirements
 
 - **JVM**: Java 17+, Kotlin 2.1+
-- **Android**: Min SDK 26 (Android 8.0) for `enrichment-android`
+- **Android**: Min SDK 26 (Android 8.0) for `musicmeta-android`
 - **User-Agent**: MusicBrainz requires a descriptive User-Agent string. Set it via `EnrichmentConfig.userAgent`.
 
 ## License

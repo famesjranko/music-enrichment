@@ -45,7 +45,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                artifactId = "enrichment-android"
+                artifactId = "musicmeta-android"
             }
         }
     }
@@ -53,7 +53,7 @@ afterEvaluate {
 
 dependencies {
     // Enrichment core
-    implementation(project(":enrichment-core"))
+    implementation(project(":musicmeta-core"))
 
     // Room
     implementation(libs.bundles.room)
