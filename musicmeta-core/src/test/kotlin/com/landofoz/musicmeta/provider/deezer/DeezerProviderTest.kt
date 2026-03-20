@@ -109,8 +109,8 @@ class DeezerProviderTest {
         // When — enriching for album art
         val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
 
-        // Then — still returns Success because cover URL extraction does not depend on artist
-        assertTrue(result is EnrichmentResult.Success)
+        // Then — NotFound because artist verification rejects blank artist name
+        assertTrue(result is EnrichmentResult.NotFound)
     }
 
     @Test

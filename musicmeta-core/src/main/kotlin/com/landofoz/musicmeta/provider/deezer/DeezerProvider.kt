@@ -8,6 +8,7 @@ import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.SearchCandidate
+import com.landofoz.musicmeta.engine.ArtistMatcher
 import com.landofoz.musicmeta.http.HttpClient
 import com.landofoz.musicmeta.http.RateLimiter
 
@@ -51,10 +52,15 @@ class DeezerProvider(
         }
 
         val query = "${request.artist} ${request.title}"
-        val result = try {
-            api.searchAlbum(query)
+        val results = try {
+            api.searchAlbums(query, 5)
         } catch (e: Exception) {
             return EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
+        }
+
+        // Pick the first result whose artist matches the request
+        val result = results.firstOrNull {
+            ArtistMatcher.isMatch(request.artist, it.artistName)
         }
 
         if (result == null) return EnrichmentResult.NotFound(type, id)

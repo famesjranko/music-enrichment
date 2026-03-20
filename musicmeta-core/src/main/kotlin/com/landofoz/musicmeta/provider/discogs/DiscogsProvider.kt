@@ -6,6 +6,7 @@ import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.ProviderCapability
+import com.landofoz.musicmeta.engine.ArtistMatcher
 import com.landofoz.musicmeta.http.HttpClient
 import com.landofoz.musicmeta.http.RateLimiter
 
@@ -44,7 +45,12 @@ class DiscogsProvider(
             ?: return EnrichmentResult.NotFound(type, id)
 
         return try {
-            val release = api.searchRelease(albumRequest.title, albumRequest.artist)
+            // Discogs titles are "Artist - Title"; verify artist matches
+            val releases = api.searchReleases(albumRequest.title, albumRequest.artist)
+            val release = releases.firstOrNull {
+                val discogsArtist = it.title.substringBefore(" - ").trim()
+                ArtistMatcher.isMatch(albumRequest.artist, discogsArtist)
+            } ?: releases.firstOrNull()
                 ?: return EnrichmentResult.NotFound(type, id)
             enrichFromRelease(release, type)
         } catch (e: Exception) {
