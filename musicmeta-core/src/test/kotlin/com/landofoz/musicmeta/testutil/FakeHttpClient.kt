@@ -9,12 +9,14 @@ class FakeHttpClient : HttpClient {
     private val jsonResponses = mutableMapOf<String, String>()
     private val errors = mutableSetOf<String>()
     private val httpResultResponses = mutableMapOf<String, HttpResult<JSONObject>>()
+    private val httpResultArrayResponses = mutableMapOf<String, HttpResult<JSONArray>>()
     val requestedUrls = mutableListOf<String>()
 
     fun givenJsonResponse(urlContains: String, json: String) { jsonResponses[urlContains] = json }
     fun givenJsonArrayResponse(urlContains: String, json: String) { jsonResponses[urlContains] = json }
     fun givenError(urlContains: String) { errors.add(urlContains) }
     fun givenHttpResult(urlContains: String, result: HttpResult<JSONObject>) { httpResultResponses[urlContains] = result }
+    fun givenHttpResultArray(urlContains: String, result: HttpResult<JSONArray>) { httpResultArrayResponses[urlContains] = result }
 
     override suspend fun fetchJson(url: String): JSONObject? {
         requestedUrls.add(url)
@@ -58,6 +60,33 @@ class FakeHttpClient : HttpClient {
         if (configured != null) return configured.value
         // Fall back to existing fetchJson behavior for backward compatibility
         val json = fetchJson(url)
+        return if (json != null) HttpResult.Ok(json) else HttpResult.NetworkError("No response configured")
+    }
+
+    override suspend fun fetchJsonArrayResult(url: String): HttpResult<JSONArray> {
+        requestedUrls.add(url)
+        val configured = httpResultArrayResponses.entries.firstOrNull { url.contains(it.key) }
+        if (configured != null) return configured.value
+        // Fall back to existing fetchJsonArray behavior for backward compatibility
+        val json = fetchJsonArray(url)
+        return if (json != null) HttpResult.Ok(json) else HttpResult.NetworkError("No response configured")
+    }
+
+    override suspend fun postJsonResult(url: String, body: String): HttpResult<JSONObject> {
+        requestedUrls.add(url)
+        val configured = httpResultResponses.entries.firstOrNull { url.contains(it.key) }
+        if (configured != null) return configured.value
+        // Fall back to existing postJson behavior for backward compatibility
+        val json = postJson(url, body)
+        return if (json != null) HttpResult.Ok(json) else HttpResult.NetworkError("No response configured")
+    }
+
+    override suspend fun postJsonArrayResult(url: String, body: String): HttpResult<JSONArray> {
+        requestedUrls.add(url)
+        val configured = httpResultArrayResponses.entries.firstOrNull { url.contains(it.key) }
+        if (configured != null) return configured.value
+        // Fall back to existing postJsonArray behavior for backward compatibility
+        val json = postJsonArray(url, body)
         return if (json != null) HttpResult.Ok(json) else HttpResult.NetworkError("No response configured")
     }
 }

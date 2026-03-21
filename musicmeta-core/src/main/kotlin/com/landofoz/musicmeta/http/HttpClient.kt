@@ -29,9 +29,30 @@ interface HttpClient {
      */
     suspend fun fetchJsonResult(url: String): HttpResult<JSONObject>
 
+    /**
+     * GET request returning typed [HttpResult] with parsed JSON array body.
+     * Unlike [fetchJsonArray] which returns null on any failure, this preserves
+     * the specific HTTP status for precise error handling.
+     */
+    suspend fun fetchJsonArrayResult(url: String): HttpResult<JSONArray>
+
     /** POST request with JSON body, parse response as JSON object. Returns null on error. */
     suspend fun postJson(url: String, body: String): JSONObject?
 
     /** POST request with JSON body, parse response as JSON array. Returns null on error. */
     suspend fun postJsonArray(url: String, body: String): JSONArray?
+
+    /**
+     * POST request returning typed [HttpResult] with parsed JSON object body.
+     * Unlike [postJson] which returns null on any failure, this preserves
+     * the specific HTTP status for precise error handling.
+     */
+    suspend fun postJsonResult(url: String, body: String): HttpResult<JSONObject>
+
+    /**
+     * POST request returning typed [HttpResult] with parsed JSON array body.
+     * Unlike [postJsonArray] which returns null on any failure, this preserves
+     * the specific HTTP status for precise error handling.
+     */
+    suspend fun postJsonArrayResult(url: String, body: String): HttpResult<JSONArray>
 }

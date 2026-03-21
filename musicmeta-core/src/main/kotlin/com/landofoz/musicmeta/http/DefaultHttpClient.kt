@@ -81,6 +81,47 @@ class DefaultHttpClient(
             }
         }
 
+    override suspend fun fetchJsonArrayResult(url: String): HttpResult<JSONArray> =
+        withContext(Dispatchers.IO) {
+            try {
+                val conn = openConnection(url).apply { connect() }
+                try {
+                    val code = conn.responseCode
+                    when {
+                        code == 429 -> {
+                            val retryMs = conn.getHeaderField("Retry-After")
+                                ?.toLongOrNull()?.let { it * 1000 }
+                            HttpResult.RateLimited(retryMs)
+                        }
+                        code in 400..499 -> {
+                            val body = readErrorBody(conn)
+                            HttpResult.ClientError(code, body)
+                        }
+                        code in 500..599 -> {
+                            val body = readErrorBody(conn)
+                            HttpResult.ServerError(code, body)
+                        }
+                        code in 200..299 -> {
+                            val text = conn.responseStream().bufferedReader()
+                                .use { it.readText() }
+                            try {
+                                HttpResult.Ok(JSONArray(text), code)
+                            } catch (e: JSONException) {
+                                HttpResult.NetworkError(
+                                    "JSON parse error: ${e.message}", e,
+                                )
+                            }
+                        }
+                        else -> HttpResult.ClientError(code)
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            } catch (e: IOException) {
+                HttpResult.NetworkError(e.message ?: "Network error", e)
+            }
+        }
+
     override suspend fun postJson(url: String, body: String): JSONObject? =
         withContext(Dispatchers.IO) {
             try {
@@ -117,6 +158,80 @@ class DefaultHttpClient(
                     conn.disconnect()
                 }
             } catch (_: IOException) { null } catch (_: JSONException) { null }
+        }
+
+    override suspend fun postJsonResult(url: String, body: String): HttpResult<JSONObject> =
+        withContext(Dispatchers.IO) {
+            try {
+                val conn = openConnection(url).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json")
+                    doOutput = true
+                }
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                try {
+                    val code = conn.responseCode
+                    when {
+                        code == 429 -> {
+                            val retryMs = conn.getHeaderField("Retry-After")
+                                ?.toLongOrNull()?.let { it * 1000 }
+                            HttpResult.RateLimited(retryMs)
+                        }
+                        code in 400..499 -> HttpResult.ClientError(code, readErrorBody(conn))
+                        code in 500..599 -> HttpResult.ServerError(code, readErrorBody(conn))
+                        code in 200..299 -> {
+                            val text = conn.responseStream().bufferedReader().use { it.readText() }
+                            try {
+                                HttpResult.Ok(JSONObject(text), code)
+                            } catch (e: JSONException) {
+                                HttpResult.NetworkError("JSON parse error: ${e.message}", e)
+                            }
+                        }
+                        else -> HttpResult.ClientError(code)
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            } catch (e: IOException) {
+                HttpResult.NetworkError(e.message ?: "Network error", e)
+            }
+        }
+
+    override suspend fun postJsonArrayResult(url: String, body: String): HttpResult<JSONArray> =
+        withContext(Dispatchers.IO) {
+            try {
+                val conn = openConnection(url).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json")
+                    doOutput = true
+                }
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                try {
+                    val code = conn.responseCode
+                    when {
+                        code == 429 -> {
+                            val retryMs = conn.getHeaderField("Retry-After")
+                                ?.toLongOrNull()?.let { it * 1000 }
+                            HttpResult.RateLimited(retryMs)
+                        }
+                        code in 400..499 -> HttpResult.ClientError(code, readErrorBody(conn))
+                        code in 500..599 -> HttpResult.ServerError(code, readErrorBody(conn))
+                        code in 200..299 -> {
+                            val text = conn.responseStream().bufferedReader().use { it.readText() }
+                            try {
+                                HttpResult.Ok(JSONArray(text), code)
+                            } catch (e: JSONException) {
+                                HttpResult.NetworkError("JSON parse error: ${e.message}", e)
+                            }
+                        }
+                        else -> HttpResult.ClientError(code)
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            } catch (e: IOException) {
+                HttpResult.NetworkError(e.message ?: "Network error", e)
+            }
         }
 
     private fun readErrorBody(conn: HttpURLConnection): String? =
