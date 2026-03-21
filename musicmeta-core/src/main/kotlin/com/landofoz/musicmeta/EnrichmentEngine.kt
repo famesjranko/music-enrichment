@@ -5,6 +5,18 @@ import com.landofoz.musicmeta.engine.DefaultEnrichmentEngine
 import com.landofoz.musicmeta.engine.ProviderRegistry
 import com.landofoz.musicmeta.http.DefaultHttpClient
 import com.landofoz.musicmeta.http.HttpClient
+import com.landofoz.musicmeta.http.RateLimiter
+import com.landofoz.musicmeta.provider.coverartarchive.CoverArtArchiveProvider
+import com.landofoz.musicmeta.provider.deezer.DeezerProvider
+import com.landofoz.musicmeta.provider.discogs.DiscogsProvider
+import com.landofoz.musicmeta.provider.fanarttv.FanartTvProvider
+import com.landofoz.musicmeta.provider.itunes.ITunesProvider
+import com.landofoz.musicmeta.provider.lastfm.LastFmProvider
+import com.landofoz.musicmeta.provider.listenbrainz.ListenBrainzProvider
+import com.landofoz.musicmeta.provider.lrclib.LrcLibProvider
+import com.landofoz.musicmeta.provider.musicbrainz.MusicBrainzProvider
+import com.landofoz.musicmeta.provider.wikidata.WikidataProvider
+import com.landofoz.musicmeta.provider.wikipedia.WikipediaProvider
 
 interface EnrichmentEngine {
 
@@ -28,12 +40,44 @@ interface EnrichmentEngine {
         private var httpClient: HttpClient? = null
         private var config: EnrichmentConfig = EnrichmentConfig()
         private var logger: EnrichmentLogger = EnrichmentLogger.NoOp
+        private var apiKeyConfig: ApiKeyConfig? = null
 
         fun addProvider(provider: EnrichmentProvider) = apply { providers.add(provider) }
         fun cache(cache: EnrichmentCache) = apply { this.cache = cache }
         fun httpClient(client: HttpClient) = apply { this.httpClient = client }
         fun config(config: EnrichmentConfig) = apply { this.config = config }
         fun logger(logger: EnrichmentLogger) = apply { this.logger = logger }
+        fun apiKeys(config: ApiKeyConfig) = apply { this.apiKeyConfig = config }
+
+        fun withDefaultProviders() = apply {
+            val client = httpClient ?: DefaultHttpClient(config.userAgent)
+            val mbRateLimiter = RateLimiter(1100) // MusicBrainz: max 1 req/sec
+            val defaultRateLimiter = RateLimiter(100)
+
+            // Always-available providers (no API key needed)
+            addProvider(MusicBrainzProvider(client, mbRateLimiter))
+            addProvider(CoverArtArchiveProvider(client, defaultRateLimiter))
+            addProvider(WikidataProvider(client, defaultRateLimiter))
+            addProvider(WikipediaProvider(client, defaultRateLimiter))
+            addProvider(DeezerProvider(client))
+            addProvider(ITunesProvider(client))
+            addProvider(ListenBrainzProvider(client, defaultRateLimiter))
+            addProvider(LrcLibProvider(client, defaultRateLimiter))
+
+            // Key-requiring providers (only added if key is provided)
+            val keys = apiKeyConfig
+            if (keys != null) {
+                keys.lastFmKey?.let {
+                    addProvider(LastFmProvider(it, client, defaultRateLimiter))
+                }
+                keys.fanartTvProjectKey?.let {
+                    addProvider(FanartTvProvider(it, client, defaultRateLimiter))
+                }
+                keys.discogsPersonalToken?.let {
+                    addProvider(DiscogsProvider(it, client, defaultRateLimiter))
+                }
+            }
+        }
 
         fun build(): EnrichmentEngine {
             val registry = ProviderRegistry(providers, config.priorityOverrides)

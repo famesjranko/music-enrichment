@@ -32,3 +32,14 @@ data class EnrichmentConfig(
         const val DEFAULT_ENRICH_TIMEOUT_MS = 30_000L
     }
 }
+
+/**
+ * Centralized API key configuration for all providers that need keys.
+ * Pass to [EnrichmentEngine.Builder.apiKeys] to enable key-requiring providers
+ * when using [EnrichmentEngine.Builder.withDefaultProviders].
+ */
+data class ApiKeyConfig(
+    val lastFmKey: String? = null,
+    val fanartTvProjectKey: String? = null,
+    val discogsPersonalToken: String? = null,
+)
