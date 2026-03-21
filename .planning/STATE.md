@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 10-genre-enhancement/10-02-PLAN.md
-last_updated: "2026-03-21T17:53:59.370Z"
+stopped_at: Completed 10-genre-enhancement/10-03-PLAN.md
+last_updated: "2026-03-21T17:59:04.588Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -53,6 +53,7 @@ Plan: 3 of 3
 | Phase 09-artist-timeline P02 | 4 | 2 tasks | 2 files |
 | Phase 10-genre-enhancement P01 | 3 | 2 tasks | 4 files |
 | Phase 10-genre-enhancement P02 | 197s | 2 tasks | 8 files |
+| Phase 10-genre-enhancement P03 | 174s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Plan: 3 of 3
 - [Phase 10-genre-enhancement]: GenreMerger as object with pure merge() — stateless, no dependencies on engine state, additive confidence with coerceAtMost(1.0f)
 - [Phase 10-genre-enhancement]: tagCounts preserved as List<Pair<String,Int>> on models rather than re-extracting in mapper — keeps mapper stateless and parser responsible for data extraction
 - [Phase 10-genre-enhancement]: extractTags refactored to delegate to extractTagsWithCounts — DRY, no behavior change for existing callers
+- [Phase 10-genre-enhancement]: resolveAll() placed on ProviderChain alongside resolve() — structurally identical except collects into list instead of early return
+- [Phase 10-genre-enhancement]: MERGEABLE_TYPES companion set in DefaultEnrichmentEngine — allows future types beyond GENRE with zero engine changes
+- [Phase 10-genre-enhancement]: mergeGenreResults() falls back to first-success when no genreTags present — graceful degradation for providers without genreTags
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T17:53:59.367Z
-Stopped at: Completed 10-genre-enhancement/10-02-PLAN.md
+Last session: 2026-03-21T17:59:04.585Z
+Stopped at: Completed 10-genre-enhancement/10-03-PLAN.md
 Resume file: None

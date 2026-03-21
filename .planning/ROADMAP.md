@@ -28,7 +28,7 @@ Full details: `.planning/milestones/v0.4.0-ROADMAP.md`
 - [ ] **Phase 7: Credits & Personnel** - New CREDITS enrichment type from MusicBrainz and Discogs
 - [x] **Phase 8: Release Editions** - New RELEASE_EDITIONS enrichment type from MusicBrainz and Discogs (completed 2026-03-21)
 - [x] **Phase 9: Artist Timeline** - New ARTIST_TIMELINE composite type synthesizing existing enrichment data (completed 2026-03-21)
-- [ ] **Phase 10: Genre Enhancement** - Multi-provider genre merging with per-tag confidence scores
+- [x] **Phase 10: Genre Enhancement** - Multi-provider genre merging with per-tag confidence scores (completed 2026-03-21)
 - [ ] **Phase 11: Provider Coverage Expansion** - Deeper coverage from Last.fm, iTunes, Fanart.tv, ListenBrainz, and Discogs
 
 ## Phase Details
@@ -102,12 +102,12 @@ Plans:
   2. When multiple providers return genre data, GenreMerger combines them: duplicate tags are deduplicated and scores are boosted, not overwritten
   3. Requesting GENRE collects results from all capable providers rather than stopping at the first success
   4. The existing genres list (plain strings) is still populated so callers using the old field do not break
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 10-01-PLAN.md — GenreTag data model + GenreMerger (TDD)
 - [x] 10-02-PLAN.md — Mapper updates for per-provider genre confidence scores
-- [ ] 10-03-PLAN.md — ProviderChain mergeable types + engine-level GenreMerger wiring
+- [x] 10-03-PLAN.md — ProviderChain mergeable types + engine-level GenreMerger wiring
 
 ### Phase 11: Provider Coverage Expansion
 **Goal**: Last.fm, iTunes, Fanart.tv, ListenBrainz, and Discogs serve additional enrichment types, filling gaps where only one provider previously covered a type
@@ -136,5 +136,5 @@ Plans:
 | 7. Credits & Personnel | v0.5.0 | 1/2 | In Progress|  |
 | 8. Release Editions | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
 | 9. Artist Timeline | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
-| 10. Genre Enhancement | v0.5.0 | 2/3 | In Progress|  |
+| 10. Genre Enhancement | v0.5.0 | 3/3 | Complete   | 2026-03-21 |
 | 11. Provider Coverage Expansion | v0.5.0 | 0/TBD | Not started | - |
