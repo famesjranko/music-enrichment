@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 10-genre-enhancement/10-03-PLAN.md
-last_updated: "2026-03-21T18:02:11.601Z"
+stopped_at: Completed 11-provider-coverage-expansion/11-01-PLAN.md
+last_updated: "2026-03-21T18:20:28.360Z"
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  completed_phases: 6
+  total_plans: 16
+  completed_plans: 16
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Consumers get comprehensive, accurate music metadata from a single enrich() call without knowing which APIs exist, how they authenticate, or how to correlate identifiers across services.
-**Current focus:** Phase 10 — Genre Enhancement
+**Current focus:** Phase 11 — Provider Coverage Expansion
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
+Phase: 11 (Provider Coverage Expansion) — EXECUTING
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: Not started
 | Phase 10-genre-enhancement P01 | 3 | 2 tasks | 4 files |
 | Phase 10-genre-enhancement P02 | 197s | 2 tasks | 8 files |
 | Phase 10-genre-enhancement P03 | 174s | 2 tasks | 4 files |
+| Phase 11-provider-coverage-expansion P01 | 18 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Plan: Not started
 - [Phase 10-genre-enhancement]: resolveAll() placed on ProviderChain alongside resolve() — structurally identical except collects into list instead of early return
 - [Phase 10-genre-enhancement]: MERGEABLE_TYPES companion set in DefaultEnrichmentEngine — allows future types beyond GENRE with zero engine changes
 - [Phase 10-genre-enhancement]: mergeGenreResults() falls back to first-success when no genreTags present — graceful degradation for providers without genreTags
+- [Phase 11-provider-coverage-expansion]: Last.fm ALBUM_METADATA guard placed before ForArtist cast, matching SIMILAR_TRACKS/TRACK_POPULARITY dispatch pattern in LastFmProvider
+- [Phase 11-provider-coverage-expansion]: enrichAlbumMetadataWithCommunity fetches release details only when releaseId is available - no extra API calls when ID absent
+- [Phase 11-provider-coverage-expansion]: FakeHttpClient URL key specificity: use database/search instead of discogs.com when also registering a releases ID response to avoid match order collision
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T17:59:04.585Z
-Stopped at: Completed 10-genre-enhancement/10-03-PLAN.md
+Last session: 2026-03-21T18:20:18.039Z
+Stopped at: Completed 11-provider-coverage-expansion/11-01-PLAN.md
 Resume file: None

@@ -119,11 +119,11 @@ Plans:
   3. Fanart.tv album-specific endpoint is used for ALBUM_ART lookups when an album MBID is available, replacing or supplementing the artist-based endpoint
   4. ListenBrainz similar-artists endpoint appears in a SIMILAR_ARTISTS chain at priority 50 and returns results
   5. Discogs release detail fields (community rating, have/want counts) are included in enrichment results when a Discogs release ID is available
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 11-01-PLAN.md — Last.fm album.getinfo ALBUM_METADATA + Discogs community data
-- [ ] 11-02-PLAN.md — iTunes lookup endpoints for ALBUM_TRACKS and ARTIST_DISCOGRAPHY
+- [x] 11-01-PLAN.md — Last.fm album.getinfo ALBUM_METADATA + Discogs community data
+- [x] 11-02-PLAN.md — iTunes lookup endpoints for ALBUM_TRACKS and ARTIST_DISCOGRAPHY
 - [ ] 11-03-PLAN.md — Fanart.tv album-specific art endpoint + ListenBrainz similar artists
 
 ## Progress
@@ -142,4 +142,4 @@ Plans:
 | 8. Release Editions | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
 | 9. Artist Timeline | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
 | 10. Genre Enhancement | v0.5.0 | 3/3 | Complete    | 2026-03-21 |
-| 11. Provider Coverage Expansion | v0.5.0 | 0/3 | Not started | - |
+| 11. Provider Coverage Expansion | v0.5.0 | 2/3 | In Progress|  |
