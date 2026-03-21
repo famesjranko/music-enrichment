@@ -6,6 +6,7 @@ import com.landofoz.musicmeta.DiscographyAlbum
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.ExternalLink
+import com.landofoz.musicmeta.ReleaseEdition
 import com.landofoz.musicmeta.TrackInfo
 
 /** Maps MusicBrainz DTOs to EnrichmentData subclasses. */
@@ -97,6 +98,22 @@ object MusicBrainzMapper {
         EnrichmentData.ArtistLinks(
             links = relations.map { rel ->
                 ExternalLink(type = rel.type, url = rel.url)
+            },
+        )
+
+    fun toReleaseEditions(detail: MusicBrainzReleaseGroupDetail): EnrichmentData.ReleaseEditions =
+        EnrichmentData.ReleaseEditions(
+            editions = detail.releases.map { edition ->
+                ReleaseEdition(
+                    title = edition.title,
+                    format = edition.format,
+                    country = edition.country,
+                    year = edition.date?.take(4)?.toIntOrNull(),
+                    label = edition.label,
+                    catalogNumber = edition.catalogNumber,
+                    barcode = edition.barcode,
+                    identifiers = EnrichmentIdentifiers(musicBrainzId = edition.id),
+                )
             },
         )
 

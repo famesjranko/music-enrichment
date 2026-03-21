@@ -147,6 +147,40 @@ object MusicBrainzParser {
     }
 
     /**
+     * Parse a release-group lookup response with releases, labels, and media.
+     * Extracts each release as a MusicBrainzEdition with format, label, catalog number, etc.
+     */
+    fun parseReleaseGroupDetail(json: JSONObject): MusicBrainzReleaseGroupDetail {
+        val id = json.getString("id")
+        val title = json.getString("title")
+        val releasesArray = json.optJSONArray("releases") ?: return MusicBrainzReleaseGroupDetail(id, title, emptyList())
+        val editions = (0 until releasesArray.length()).map { i ->
+            val obj = releasesArray.getJSONObject(i)
+            val media = obj.optJSONArray("media")
+            val format = if (media != null && media.length() > 0) {
+                media.getJSONObject(0).optString("format").takeIf { it.isNotBlank() }
+            } else null
+            val labelInfo = obj.optJSONArray("label-info")
+            val firstLabel = if (labelInfo != null && labelInfo.length() > 0) {
+                labelInfo.getJSONObject(0)
+            } else null
+            val label = firstLabel?.optJSONObject("label")?.optString("name")?.takeIf { it.isNotBlank() }
+            val catalogNumber = firstLabel?.optString("catalog-number")?.takeIf { it.isNotBlank() }
+            MusicBrainzEdition(
+                id = obj.getString("id"),
+                title = obj.getString("title"),
+                date = obj.optString("date").takeIf { it.isNotBlank() },
+                country = obj.optString("country").takeIf { it.isNotBlank() },
+                barcode = obj.optString("barcode").takeIf { it.isNotBlank() },
+                format = format,
+                label = label,
+                catalogNumber = catalogNumber,
+            )
+        }
+        return MusicBrainzReleaseGroupDetail(id = id, title = title, releases = editions)
+    }
+
+    /**
      * Parse recording credits from a recording lookup response with artist-rels and work-rels.
      *
      * Processes top-level artist-rels and work-rels (composer/lyricist/arranger from nested

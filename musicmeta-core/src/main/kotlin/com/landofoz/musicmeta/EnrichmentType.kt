@@ -41,6 +41,7 @@ enum class EnrichmentType(val defaultTtlMs: Long) {
     // Additional metadata
     ARTIST_DISCOGRAPHY(30L * 24 * 60 * 60 * 1000),
     ALBUM_TRACKS(365L * 24 * 60 * 60 * 1000),
+    RELEASE_EDITIONS(365L * 24 * 60 * 60 * 1000),
 
     // Additional artwork
     ARTIST_BANNER(90L * 24 * 60 * 60 * 1000),

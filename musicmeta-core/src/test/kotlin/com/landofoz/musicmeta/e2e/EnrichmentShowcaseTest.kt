@@ -351,6 +351,7 @@ class EnrichmentShowcaseTest {
             data.links.take(4).joinToString(", ") { "${it.type}=${it.url.take(40)}" }
         is EnrichmentData.Credits ->
             data.credits.take(4).joinToString(", ") { "${it.name}(${it.role})" }
+        is EnrichmentData.ReleaseEditions -> "${data.editions.size} editions"
     }
 
     companion object {

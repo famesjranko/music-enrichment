@@ -376,6 +376,110 @@ class MusicBrainzParserTest {
         assertEquals("performance", restored.credits[0].roleCategory)
     }
 
+    @Test
+    fun `parseReleaseGroupDetail parses releases array into MusicBrainzReleaseGroupDetail`() {
+        // Given -- release-group lookup response with releases array
+        val json = JSONObject(RELEASE_GROUP_WITH_RELEASES)
+
+        // When -- parsing release group detail
+        val detail = MusicBrainzParser.parseReleaseGroupDetail(json)
+
+        // Then -- detail has correct id, title, and list of releases
+        assertEquals("rg1", detail.id)
+        assertEquals("OK Computer", detail.title)
+        assertEquals(2, detail.releases.size)
+    }
+
+    @Test
+    fun `parseReleaseGroupDetail extracts all fields from release object`() {
+        // Given -- release-group lookup response with fully populated release
+        val json = JSONObject(RELEASE_GROUP_WITH_RELEASES)
+
+        // When -- parsing release group detail
+        val detail = MusicBrainzParser.parseReleaseGroupDetail(json)
+
+        // Then -- first release has all fields extracted
+        val release = detail.releases[0]
+        assertEquals("rel1", release.id)
+        assertEquals("OK Computer", release.title)
+        assertEquals("1997-06-16", release.date)
+        assertEquals("GB", release.country)
+        assertEquals("BARCODE123", release.barcode)
+        assertEquals("CD", release.format)
+        assertEquals("Parlophone", release.label)
+        assertEquals("PCS 8088", release.catalogNumber)
+    }
+
+    @Test
+    fun `parseReleaseGroupDetail returns empty releases list when releases array absent`() {
+        // Given -- release-group JSON with no releases key
+        val json = JSONObject("""{"id":"rg1","title":"No Releases"}""")
+
+        // When -- parsing release group detail
+        val detail = MusicBrainzParser.parseReleaseGroupDetail(json)
+
+        // Then -- releases list is empty
+        assertEquals("rg1", detail.id)
+        assertTrue(detail.releases.isEmpty())
+    }
+
+    @Test
+    fun `toReleaseEditions maps MusicBrainzEdition list to ReleaseEditions with correct fields`() {
+        // Given -- a list of MusicBrainzEdition DTOs
+        val editions = listOf(
+            MusicBrainzEdition(
+                id = "rel1", title = "OK Computer",
+                date = "1997-06-16", country = "GB", barcode = "BAR001",
+                format = "CD", label = "Parlophone", catalogNumber = "PCS 8088",
+            ),
+        )
+
+        // When -- mapping to ReleaseEditions
+        val result = MusicBrainzMapper.toReleaseEditions(
+            MusicBrainzReleaseGroupDetail(id = "rg1", title = "OK Computer", releases = editions),
+        )
+
+        // Then -- ReleaseEditions contains correctly mapped ReleaseEdition
+        assertEquals(1, result.editions.size)
+        val edition = result.editions[0]
+        assertEquals("OK Computer", edition.title)
+        assertEquals("CD", edition.format)
+        assertEquals("GB", edition.country)
+        assertEquals(1997, edition.year)
+        assertEquals("Parlophone", edition.label)
+        assertEquals("PCS 8088", edition.catalogNumber)
+        assertEquals("BAR001", edition.barcode)
+        assertEquals(com.landofoz.musicmeta.EnrichmentIdentifiers(musicBrainzId = "rel1"), edition.identifiers)
+    }
+
+    @Test
+    fun `ReleaseEditions round-trip serialization works`() {
+        // Given -- a ReleaseEditions instance with one edition
+        val original = com.landofoz.musicmeta.EnrichmentData.ReleaseEditions(
+            editions = listOf(
+                com.landofoz.musicmeta.ReleaseEdition(
+                    title = "OK Computer",
+                    format = "CD",
+                    country = "GB",
+                    year = 1997,
+                    label = "Parlophone",
+                    catalogNumber = "PCS 8088",
+                    barcode = "BARCODE123",
+                    identifiers = com.landofoz.musicmeta.EnrichmentIdentifiers(musicBrainzId = "rel1"),
+                ),
+            ),
+        )
+
+        // When -- serializing and deserializing
+        val json = kotlinx.serialization.json.Json.encodeToString(original)
+        val restored = kotlinx.serialization.json.Json.decodeFromString<com.landofoz.musicmeta.EnrichmentData.ReleaseEditions>(json)
+
+        // Then -- restored instance matches original
+        assertEquals(original, restored)
+        assertEquals("OK Computer", restored.editions[0].title)
+        assertEquals(1997, restored.editions[0].year)
+    }
+
     companion object {
         private val RECORDING_WITH_VOCAL_REL = """
             {
@@ -642,6 +746,35 @@ class MusicBrainzParserTest {
                   "type": "wikipedia",
                   "target-type": "url",
                   "url": {"resource": "https://en.wikipedia.org/wiki/Radiohead"}
+                }
+              ]
+            }
+        """.trimIndent()
+
+        private val RELEASE_GROUP_WITH_RELEASES = """
+            {
+              "id": "rg1",
+              "title": "OK Computer",
+              "releases": [
+                {
+                  "id": "rel1",
+                  "title": "OK Computer",
+                  "date": "1997-06-16",
+                  "country": "GB",
+                  "barcode": "BARCODE123",
+                  "media": [{"format": "CD", "tracks": []}],
+                  "label-info": [
+                    {
+                      "catalog-number": "PCS 8088",
+                      "label": {"name": "Parlophone"}
+                    }
+                  ]
+                },
+                {
+                  "id": "rel2",
+                  "title": "OK Computer",
+                  "date": "1997-07-01",
+                  "country": "US"
                 }
               ]
             }

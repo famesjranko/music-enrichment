@@ -77,3 +77,20 @@ data class MusicBrainzCredit(
     val role: String,
     val roleCategory: String?,
 )
+
+data class MusicBrainzReleaseGroupDetail(
+    val id: String,
+    val title: String,
+    val releases: List<MusicBrainzEdition>,
+)
+
+data class MusicBrainzEdition(
+    val id: String,
+    val title: String,
+    val date: String?,
+    val country: String?,
+    val barcode: String?,
+    val format: String?,
+    val label: String?,
+    val catalogNumber: String?,
+)

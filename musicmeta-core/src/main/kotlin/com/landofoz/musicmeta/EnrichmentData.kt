@@ -80,6 +80,9 @@ sealed class EnrichmentData {
     @Serializable
     data class Credits(val credits: List<Credit>) : EnrichmentData()
 
+    @Serializable
+    data class ReleaseEditions(val editions: List<ReleaseEdition>) : EnrichmentData()
+
 }
 
 @Serializable
@@ -150,5 +153,17 @@ data class Credit(
     val name: String,
     val role: String,
     val roleCategory: String? = null,
+    val identifiers: EnrichmentIdentifiers = EnrichmentIdentifiers(),
+)
+
+@Serializable
+data class ReleaseEdition(
+    val title: String,
+    val format: String? = null,
+    val country: String? = null,
+    val year: Int? = null,
+    val label: String? = null,
+    val catalogNumber: String? = null,
+    val barcode: String? = null,
     val identifiers: EnrichmentIdentifiers = EnrichmentIdentifiers(),
 )
