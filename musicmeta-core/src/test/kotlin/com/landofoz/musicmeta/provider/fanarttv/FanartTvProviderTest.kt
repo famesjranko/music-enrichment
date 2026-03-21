@@ -173,7 +173,48 @@ class FanartTvProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns artist banner`() = runTest {
+        // Given — Fanart.tv returns images with a banner URL
+        httpClient.givenJsonResponse("fanart.tv", BANNER_IMAGES_JSON)
+        val request = artistRequest()
+
+        // When — enriching for artist banner
+        val result = provider.enrich(request, EnrichmentType.ARTIST_BANNER)
+
+        // Then — success with banner artwork
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data
+        assertTrue(data is EnrichmentData.Artwork)
+        assertEquals(
+            "https://assets.fanart.tv/fanart/banner1.jpg",
+            (data as EnrichmentData.Artwork).url,
+        )
+    }
+
+    @Test
+    fun `enrich returns NotFound when no banners`() = runTest {
+        // Given — Fanart.tv returns images with empty banners
+        httpClient.givenJsonResponse("fanart.tv", EMPTY_IMAGES_JSON)
+        val request = artistRequest()
+
+        // When — enriching for artist banner
+        val result = provider.enrich(request, EnrichmentType.ARTIST_BANNER)
+
+        // Then — NotFound because no banner images available
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
+        val BANNER_IMAGES_JSON = """
+            {
+              "artistthumb": [],
+              "artistbackground": [],
+              "hdmusiclogo": [],
+              "musicbanner": [{"url": "https://assets.fanart.tv/fanart/banner1.jpg"}]
+            }
+        """.trimIndent()
+
         val ARTIST_IMAGES_JSON = """
             {
               "artistthumb": [{"url": "https://assets.fanart.tv/fanart/thumb1.jpg"}],

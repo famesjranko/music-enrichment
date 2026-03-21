@@ -224,7 +224,53 @@ class LastFmProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns SimilarTracks for track`() = runTest {
+        // Given — Last.fm returns similar tracks
+        httpClient.givenJsonResponse("track.getsimilar", SIMILAR_TRACKS_JSON)
+        val request = EnrichmentRequest.forTrack(title = "Paranoid Android", artist = "Radiohead")
+
+        // When — enriching for similar tracks
+        val result = provider.enrich(request, EnrichmentType.SIMILAR_TRACKS)
+
+        // Then — success with SimilarTracks data
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data
+        assertTrue(data is EnrichmentData.SimilarTracks)
+        val tracks = (data as EnrichmentData.SimilarTracks).tracks
+        assertEquals(2, tracks.size)
+        assertEquals("Lucky", tracks[0].title)
+        assertEquals("Radiohead", tracks[0].artist)
+        assertEquals(0.9f, tracks[0].matchScore)
+        assertEquals("track-mbid-1", tracks[0].identifiers.musicBrainzId)
+        assertEquals("Karma Police", tracks[1].title)
+    }
+
+    @Test
+    fun `enrich returns NotFound for SimilarTracks when no similar tracks`() = runTest {
+        // Given — Last.fm returns empty similar tracks
+        httpClient.givenJsonResponse("track.getsimilar", """{"similartracks":{"track":[]}}""")
+        val request = EnrichmentRequest.forTrack(title = "Unknown", artist = "Nobody")
+
+        // When — enriching for similar tracks
+        val result = provider.enrich(request, EnrichmentType.SIMILAR_TRACKS)
+
+        // Then — NotFound because no similar tracks returned
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
+        val SIMILAR_TRACKS_JSON = """
+            {
+              "similartracks": {
+                "track": [
+                  {"name": "Lucky", "match": "0.9", "mbid": "track-mbid-1", "artist": {"name": "Radiohead"}},
+                  {"name": "Karma Police", "match": "0.75", "mbid": "", "artist": {"name": "Radiohead"}}
+                ]
+              }
+            }
+        """.trimIndent()
+
         val ARTIST_INFO_JSON = """
             {
               "artist": {

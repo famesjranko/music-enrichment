@@ -1,5 +1,6 @@
 package com.landofoz.musicmeta.provider.deezer
 
+import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -12,7 +13,7 @@ import com.landofoz.musicmeta.http.RateLimiter
 
 /**
  * Enrichment provider using Deezer's public search API.
- * Provides album art as a search-based fallback (no API key needed).
+ * Provides album art, artist discography, and album tracks (no API key needed).
  */
 class DeezerProvider(
     httpClient: HttpClient,
@@ -28,6 +29,8 @@ class DeezerProvider(
 
     override val capabilities = listOf(
         ProviderCapability(EnrichmentType.ALBUM_ART, priority = 50),
+        ProviderCapability(EnrichmentType.ARTIST_DISCOGRAPHY, priority = 50),
+        ProviderCapability(EnrichmentType.ALBUM_TRACKS, priority = 50),
     )
 
     override suspend fun searchCandidates(
@@ -45,23 +48,70 @@ class DeezerProvider(
         request: EnrichmentRequest,
         type: EnrichmentType,
     ): EnrichmentResult {
+        return try {
+            when (type) {
+                EnrichmentType.ARTIST_DISCOGRAPHY -> enrichDiscography(request)
+                EnrichmentType.ALBUM_TRACKS -> enrichAlbumTracks(request)
+                else -> enrichAlbumArt(request, type)
+            }
+        } catch (e: Exception) {
+            EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
+        }
+    }
+
+    private suspend fun enrichDiscography(request: EnrichmentRequest): EnrichmentResult {
+        val artistRequest = request as? EnrichmentRequest.ForArtist
+            ?: return EnrichmentResult.NotFound(EnrichmentType.ARTIST_DISCOGRAPHY, id)
+
+        val artist = api.searchArtist(artistRequest.name)
+            ?: return EnrichmentResult.NotFound(EnrichmentType.ARTIST_DISCOGRAPHY, id)
+
+        val albums = api.getArtistAlbums(artist.id)
+        if (albums.isEmpty()) return EnrichmentResult.NotFound(EnrichmentType.ARTIST_DISCOGRAPHY, id)
+
+        return EnrichmentResult.Success(
+            type = EnrichmentType.ARTIST_DISCOGRAPHY,
+            data = DeezerMapper.toDiscography(albums),
+            provider = id,
+            confidence = CONFIDENCE,
+            resolvedIdentifiers = EnrichmentIdentifiers().withExtra("deezerId", artist.id.toString()),
+        )
+    }
+
+    private suspend fun enrichAlbumTracks(request: EnrichmentRequest): EnrichmentResult {
+        val albumRequest = request as? EnrichmentRequest.ForAlbum
+            ?: return EnrichmentResult.NotFound(EnrichmentType.ALBUM_TRACKS, id)
+
+        val query = "${albumRequest.artist} ${albumRequest.title}"
+        val albums = api.searchAlbums(query, 1)
+        val album = albums.firstOrNull()
+            ?: return EnrichmentResult.NotFound(EnrichmentType.ALBUM_TRACKS, id)
+
+        val tracks = api.getAlbumTracks(album.id)
+        if (tracks.isEmpty()) return EnrichmentResult.NotFound(EnrichmentType.ALBUM_TRACKS, id)
+
+        return EnrichmentResult.Success(
+            type = EnrichmentType.ALBUM_TRACKS,
+            data = DeezerMapper.toTracklist(tracks),
+            provider = id,
+            confidence = CONFIDENCE,
+        )
+    }
+
+    private suspend fun enrichAlbumArt(
+        request: EnrichmentRequest,
+        type: EnrichmentType,
+    ): EnrichmentResult {
         if (request !is EnrichmentRequest.ForAlbum) {
             return EnrichmentResult.NotFound(type, id)
         }
 
         val query = "${request.artist} ${request.title}"
-        val results = try {
-            api.searchAlbums(query, 5)
-        } catch (e: Exception) {
-            return EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
-        }
+        val results = api.searchAlbums(query, 5)
 
-        // Pick the first result whose artist matches the request
         val result = results.firstOrNull {
             ArtistMatcher.isMatch(request.artist, it.artistName)
-        }
-
-        if (result == null) return EnrichmentResult.NotFound(type, id)
+        } ?: return EnrichmentResult.NotFound(type, id)
 
         val artwork = DeezerMapper.toArtwork(result)
             ?: return EnrichmentResult.NotFound(type, id)
@@ -78,7 +128,6 @@ class DeezerProvider(
         DeezerMapper.toSearchCandidate(this, this@DeezerProvider.id, SEARCH_SCORE)
 
     private companion object {
-        /** Fuzzy search by artist+title against large catalog. First result may not be exact match. */
         const val CONFIDENCE = 0.7f
         const val SEARCH_SCORE = 75
     }

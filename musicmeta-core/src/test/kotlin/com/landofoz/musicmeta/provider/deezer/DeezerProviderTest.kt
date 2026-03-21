@@ -133,7 +133,74 @@ class DeezerProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns Discography for artist`() = runTest {
+        // Given — Deezer API returns an artist search result and albums
+        httpClient.givenJsonResponse("search/artist", """{"data":[{"id":399,"name":"Radiohead"}]}""")
+        httpClient.givenJsonResponse("artist/399/albums", ARTIST_ALBUMS_RESPONSE)
+        val request = EnrichmentRequest.forArtist("Radiohead")
+
+        // When — enriching for artist discography
+        val result = provider.enrich(request, EnrichmentType.ARTIST_DISCOGRAPHY)
+
+        // Then — success with Discography data
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Discography
+        assertEquals(2, data.albums.size)
+        assertEquals("OK Computer", data.albums[0].title)
+        assertEquals("1997", data.albums[0].year)
+        assertEquals("album", data.albums[0].type)
+        assertEquals("Kid A", data.albums[1].title)
+    }
+
+    @Test
+    fun `enrich returns Tracklist for album`() = runTest {
+        // Given — Deezer API returns album search and tracks
+        httpClient.givenJsonResponse("search/album", """{"data":[{"id":6575,"title":"OK Computer","artist":{"name":"Radiohead"}}]}""")
+        httpClient.givenJsonResponse("album/6575/tracks", ALBUM_TRACKS_RESPONSE)
+        val request = EnrichmentRequest.forAlbum("OK Computer", "Radiohead")
+
+        // When — enriching for album tracks
+        val result = provider.enrich(request, EnrichmentType.ALBUM_TRACKS)
+
+        // Then — success with Tracklist data
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Tracklist
+        assertEquals(2, data.tracks.size)
+        assertEquals("Airbag", data.tracks[0].title)
+        assertEquals(1, data.tracks[0].position)
+        assertEquals(284000L, data.tracks[0].durationMs)
+        assertEquals("Paranoid Android", data.tracks[1].title)
+    }
+
+    @Test
+    fun `enrich returns NotFound for Discography when artist not found`() = runTest {
+        // Given — Deezer API returns no artist search results
+        httpClient.givenJsonResponse("search/artist", """{"data":[]}""")
+        val request = EnrichmentRequest.forArtist("Nonexistent Artist")
+
+        // When — enriching for artist discography
+        val result = provider.enrich(request, EnrichmentType.ARTIST_DISCOGRAPHY)
+
+        // Then — NotFound because no artist matched
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     companion object {
+        val ARTIST_ALBUMS_RESPONSE = """
+            {"data":[
+                {"id":6575,"title":"OK Computer","release_date":"1997-06-16","record_type":"album","cover_small":"https://img.dz/small.jpg","cover_medium":"https://img.dz/medium.jpg"},
+                {"id":6576,"title":"Kid A","release_date":"2000-10-02","record_type":"album","cover_small":"https://img.dz/kida_s.jpg","cover_medium":"https://img.dz/kida_m.jpg"}
+            ]}
+        """.trimIndent()
+
+        val ALBUM_TRACKS_RESPONSE = """
+            {"data":[
+                {"id":1001,"title":"Airbag","track_position":1,"duration":284},
+                {"id":1002,"title":"Paranoid Android","track_position":2,"duration":383}
+            ]}
+        """.trimIndent()
+
         val DEEZER_RESPONSE = """
             {"data":[{
                 "title":"OK Computer",

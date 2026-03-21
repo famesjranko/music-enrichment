@@ -35,6 +35,7 @@ class LastFmProvider(
         ProviderCapability(EnrichmentType.GENRE, priority = 100),
         ProviderCapability(EnrichmentType.ARTIST_BIO, priority = 50),
         ProviderCapability(EnrichmentType.ARTIST_POPULARITY, priority = 100),
+        ProviderCapability(EnrichmentType.SIMILAR_TRACKS, priority = 100),
     )
 
     override suspend fun enrich(
@@ -42,6 +43,18 @@ class LastFmProvider(
         type: EnrichmentType,
     ): EnrichmentResult {
         if (!isAvailable) return EnrichmentResult.NotFound(type, id)
+
+        // SIMILAR_TRACKS requires a ForTrack request; all others require ForArtist
+        if (type == EnrichmentType.SIMILAR_TRACKS) {
+            val trackRequest = request as? EnrichmentRequest.ForTrack
+                ?: return EnrichmentResult.NotFound(type, id)
+            return try {
+                enrichSimilarTracks(trackRequest, type)
+            } catch (e: Exception) {
+                EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
+            }
+        }
+
         val artistRequest = request as? EnrichmentRequest.ForArtist
             ?: return EnrichmentResult.NotFound(type, id)
 
@@ -84,6 +97,15 @@ class LastFmProvider(
             ?: return EnrichmentResult.NotFound(type, id)
         val bio = info.bio ?: return EnrichmentResult.NotFound(type, id)
         return success(LastFmMapper.toBiography(bio), type)
+    }
+
+    private suspend fun enrichSimilarTracks(
+        request: EnrichmentRequest.ForTrack,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        val tracks = api.getSimilarTracks(request.title, request.artist)
+        if (tracks.isEmpty()) return EnrichmentResult.NotFound(type, id)
+        return success(LastFmMapper.toSimilarTracks(tracks), type)
     }
 
     private suspend fun enrichPopularity(

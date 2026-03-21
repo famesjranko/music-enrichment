@@ -37,6 +37,7 @@ class FanartTvProvider(
         ProviderCapability(EnrichmentType.ARTIST_LOGO, priority = 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID),
         ProviderCapability(EnrichmentType.ALBUM_ART, priority = 30, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID),
         ProviderCapability(EnrichmentType.CD_ART, priority = 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID),
+        ProviderCapability(EnrichmentType.ARTIST_BANNER, priority = 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID),
     )
 
     override suspend fun enrich(
@@ -73,6 +74,7 @@ class FanartTvProvider(
             EnrichmentType.ARTIST_LOGO -> images.logos.firstOrNull()
             EnrichmentType.ALBUM_ART -> images.albumCovers.firstOrNull()
             EnrichmentType.CD_ART -> images.cdArt.firstOrNull()
+            EnrichmentType.ARTIST_BANNER -> images.banners.firstOrNull()
             else -> null
         } ?: return EnrichmentResult.NotFound(type, id)
         return success(FanartTvMapper.toArtwork(url), type)
