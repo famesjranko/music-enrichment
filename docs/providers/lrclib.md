@@ -43,6 +43,8 @@ Returns a single result or 404:
 GET /api/search?artist_name={artist}&track_name={track}
 ```
 
+Also supports `?q={freetext}` for free-text search when you don't have cleanly separated artist/track fields.
+
 Returns a JSON array of candidates:
 
 ```json
@@ -88,11 +90,13 @@ Confidence:
 
 The API is minimal by design — we're already using most of it.
 
-### Endpoint Not Yet Called
+### Endpoints Not Yet Called
 
 | Endpoint | Data | Useful For |
 |----------|------|------------|
 | `GET /api/get/{id}` | Fetch by LRCLIB ID | Fast re-lookup if ID is cached |
+| `POST /api/request-challenge` | Returns a proof-of-work challenge for spam prevention | Required before publishing lyrics |
+| `POST /api/publish` | Submit lyrics (requires solving a cryptographic challenge) | Write-only; not relevant for our read-only use case |
 
 ## Synced Lyrics Format (LRC)
 
@@ -105,10 +109,14 @@ Synced lyrics use the standard LRC format:
 
 Each line has `[mm:ss.cc]` timestamp + text. Consumers need to parse this for karaoke-style display.
 
+## User-Agent Requirement
+
+LRCLIB expects a descriptive User-Agent header, similar to MusicBrainz. Our `DefaultHttpClient` handles this.
+
 ## Gotchas & Edge Cases
 
 - **Track-only**: Only handles `ForTrack` requests. Album and artist requests return `NotFound`.
-- **Duration is in seconds**: The API expects integer seconds, not milliseconds. Our provider converts: `durationMs / 1000`.
+- **Duration is in seconds**: The API expects seconds (numeric, may include decimals), not milliseconds. Our provider converts: `(it / 1000).toInt()`, which loses sub-second precision.
 - **Instrumental detection**: `instrumental: true` means the track has no vocals. We return this as `EnrichmentData.Lyrics(isInstrumental = true)` — it's a successful result, not NotFound.
 - **Synced vs plain availability**: Some tracks have synced lyrics, some have only plain, some have both. We return whatever is available. If requesting `LYRICS_SYNCED` but only plain exists, we still return the data (caller decides).
 - **404 on exact match is normal**: Many tracks don't have an exact match with album+duration. The search fallback usually finds them.
@@ -116,6 +124,7 @@ Each line has `[mm:ss.cc]` timestamp + text. Consumers need to parse this for ka
 - **Community-submitted**: Lyrics are user-contributed. Quality varies, especially for non-English tracks.
 - **LRC timestamps may vary**: Different submissions for the same song may have slightly different timestamps.
 - **No bulk endpoint**: Each track requires its own request. For large playlists, this means many sequential calls.
+- **Rate limiting returns HTTP 429**: The API returns 429 when rate limits are exceeded. Exact limits are not published; our 200ms delay is a precaution.
 
 ## Internal Architecture
 

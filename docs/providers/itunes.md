@@ -20,7 +20,7 @@
 GET /search?media=music&entity=album&term={query}&limit={n}
 ```
 
-Query: free text, typically `"artist name album title"`.
+Query: free text, typically `"artist name album title"`. Default limit is 50; maximum is 200.
 
 Response:
 ```json
@@ -34,6 +34,7 @@ Response:
       "collectionName": "OK Computer",
       "artistName": "Radiohead",
       "artistId": 657515,
+      "artworkUrl60": "https://is1-ssl.mzstatic.com/.../60x60bb.jpg",
       "artworkUrl100": "https://is1-ssl.mzstatic.com/.../100x100bb.jpg",
       "releaseDate": "1997-06-16T07:00:00Z",
       "primaryGenreName": "Alternative",
@@ -75,7 +76,7 @@ This gives us **arbitrary image sizes from a single API response**. We return th
 | Album title | `collectionName` | |
 | Artist name | `artistName` | Verified via `ArtistMatcher.isMatch()` |
 | Artwork URL | `artworkUrl100` → replaced to 1200x1200 | High-res via URL manipulation |
-| Thumbnail URL | `artworkUrl100` | Original 100x100 |
+| Thumbnail URL | `artworkUrl100` | Original 100x100 (also `artworkUrl60` available at 60x60) |
 
 ## What We DON'T Extract (Available Data)
 
@@ -103,9 +104,13 @@ This gives us **arbitrary image sizes from a single API response**. We return th
 | `GET /lookup?id={collectionId}&entity=song` | All tracks in an album | ALBUM_TRACKS |
 | `GET /lookup?id={artistId}&entity=album` | All albums by an artist | ARTIST_DISCOGRAPHY |
 | `GET /lookup?amgArtistId={id}` | Lookup by AllMusic ID | Cross-reference |
+| `GET /lookup?upc={barcode}` | Lookup album by UPC barcode | Precise, ID-based album lookup when barcode is available from MusicBrainz/Discogs |
 
 ## Gotchas & Edge Cases
 
+- **`attribute` parameter**: The `attribute` parameter restricts which field `term` matches: `albumTerm`, `artistTerm`, `songTerm`, `composerTerm`, etc. Could improve search precision.
+- **`explicit` parameter**: `explicit=Yes` or `explicit=No` filters results by explicit content flag.
+- **`country` format mismatch**: Request parameter uses 2-letter ISO codes (`US`, `GB`); response `country` field returns 3-letter codes (`USA`, `GBR`).
 - **Aggressive rate limiting**: ~20 requests/minute is very low. Our 3000ms (3-second) interval is conservative but necessary. Exceeding the limit returns a 403 or empty results without clear error messaging.
 - **No rate limit headers**: iTunes doesn't return `Retry-After` or `X-RateLimit-*` headers. You just get 403'd or silently throttled.
 - **Lowest confidence (0.65)**: Pure text search with no ID-based lookup. Artist matching helps but the result may still be wrong.
@@ -116,6 +121,11 @@ This gives us **arbitrary image sizes from a single API response**. We return th
 - **URL size limits**: While `3000x3000bb` technically works, many album artworks are stored at lower native resolutions. Requesting larger just returns the max available.
 - **mzstatic.com CDN**: Image URLs point to Apple's CDN. These are stable and cacheable.
 - **AMG Artist ID**: `amgArtistId` is an AllMusic Guide identifier — useful for cross-referencing with AllMusic's database but we don't use it.
+- **Dated documentation**: Official docs are in Apple's Documentation Archive (dated 2017-09-19) — the API works but docs may not reflect undocumented changes since then.
+
+## Apple Music API
+
+Apple offers the Apple Music API (MusicKit) as a more capable alternative with editorial notes, ISRC codes, charts, and recommendations. Requires an Apple Developer account + JWT auth.
 
 ## Internal Architecture
 

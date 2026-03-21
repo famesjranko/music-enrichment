@@ -7,11 +7,12 @@
 | | |
 |---|---|
 | **Base URL** | `https://api.discogs.com` |
-| **Auth** | Personal access token (query param `token`) |
+| **Auth** | Personal access token (query param `token` or `Authorization: Discogs token=PERSONAL_ACCESS_TOKEN` header) |
 | **Rate Limit** | 60 requests/minute (authenticated); 25/min unauthenticated |
 | **Format** | JSON |
 | **Reference Docs** | https://www.discogs.com/developers |
 | **API Key Required** | Yes (personal access token) |
+| **User-Agent** | **Required** — descriptive User-Agent header. Requests without one may be throttled or rejected with 403. |
 
 ## Getting a Token
 
@@ -21,6 +22,8 @@
 4. Pass as `discogs.token` system property or `DISCOGS_TOKEN` env var
 
 Note: This is a **personal access token**, not OAuth. It gives read-only access to the public database.
+
+Discogs also supports (and recommends) the `Authorization: Discogs token=PERSONAL_ACCESS_TOKEN` header instead of the query param. The header method avoids token leakage in logs.
 
 ## Endpoints We Use
 
@@ -76,6 +79,9 @@ Response:
 | `format[]` | Each result | "CD", "Vinyl", "Cassette", "Digital" — format info |
 | `genre[]` | Each result | GENRE — Discogs has its own genre taxonomy |
 | `style[]` | Each result | Sub-genres (more specific than genre) |
+| `master_id` | Each result | Links to master release |
+| `master_url` | Each result | API URL for master release |
+| `catno` | Each result | Catalog number |
 | `barcode[]` | Each result | UPC/EAN for cross-referencing |
 | Multiple labels | `label[]` | We only take `[0]`, but releases often have multiple |
 
@@ -83,7 +89,7 @@ Response:
 
 | Endpoint | Data | Useful For |
 |----------|------|------------|
-| `GET /releases/{id}` | Full release: tracklist with credits, notes, companies, formats, images[], videos[], genres, styles, community rating | Everything |
+| `GET /releases/{id}` | Full release: tracklist with credits, notes, companies, formats, images[], videos[], genres, styles, community rating. Includes `community.have`, `community.want` counts and `rating` with `average` and `count` — useful for popularity signals. | Everything |
 | `GET /masters/{id}` | Master release (canonical version): main_release, versions_url, tracklist, images | RELEASE_EDITIONS — all pressings |
 | `GET /masters/{id}/versions` | All versions/pressings with format, label, country, year | RELEASE_EDITIONS |
 | `GET /artists/{id}` | **Artist profile**: realname, profile (bio), namevariations, urls[], images[], members[], groups[] | ARTIST_BIO, BAND_MEMBERS, ARTIST_LINKS |
@@ -118,10 +124,12 @@ This is one of the best sources for **band member lists**.
 - **Multiple pressings**: Searching "OK Computer" may return the UK CD, US vinyl, Japanese special edition, etc. Each is a separate result with different labels, countries, barcodes.
 - **Image CDN**: `cover_image` URLs point to `i.discogs.com` CDN. These require the same `User-Agent` header or they may return 403.
 - **Not extracting `id`**: This is the biggest current gap. Without the release `id`, we can't do detailed lookups for tracklists, credits, or full metadata.
-- **Rate limit is per-minute, not per-second**: 60/min = 1/sec average, but bursts are allowed. Our 100ms limiter may need adjustment if other providers also use Discogs.
+- **Rate limit is per-minute, not per-second**: 60/min = 1/sec average, but bursts are allowed. The `RateLimiter(100)` in code means 100ms minimum between requests, which allows bursts within the 60/min budget.
 - **Genre vs Style**: Discogs has a curated genre taxonomy (broad: "Rock", "Electronic") and styles (specific: "Shoegaze", "IDM"). Both are in search results but we extract neither.
 - **Authenticated rate limit**: 60/min with token, 25/min without. Always use the token.
 - **Pagination**: Search results are paginated. We only fetch page 1. For comprehensive results, would need to follow `pagination.urls.next`.
+- **`year: "0"` edge case**: Unknown year returns `"0"` not blank. Our `takeIf { it.isNotBlank() }` doesn't filter this.
+- **Rate limit response headers**: `X-Discogs-Ratelimit` (total allowed/min), `X-Discogs-Ratelimit-Used` (used in current window), `X-Discogs-Ratelimit-Remaining` (remaining). Useful for adaptive rate limiting.
 
 ## Internal Architecture
 

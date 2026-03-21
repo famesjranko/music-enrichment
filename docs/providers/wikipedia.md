@@ -8,7 +8,7 @@
 |---|---|
 | **Base URL** | `https://en.wikipedia.org/api/rest_v1` |
 | **Auth** | None |
-| **Rate Limit** | Not strictly enforced; be respectful. We use 100ms. |
+| **Rate Limit** | Wikimedia requires a descriptive User-Agent and will throttle or block clients without one. Stay well under 200 req/s. Our 100ms rate limiter is safe. |
 | **Format** | JSON |
 | **Reference Docs** | https://en.wikipedia.org/api/rest_v1/ |
 | **Wikimedia REST API Docs** | https://www.mediawiki.org/wiki/Wikimedia_REST_API |
@@ -84,7 +84,7 @@ Returns:
 
 | Field | Source | Notes |
 |-------|--------|-------|
-| Bio text | `extract` | Plain text summary (usually 2-3 paragraphs) |
+| Bio text | `extract` | Lead section summary (first paragraph or first few sentences). Length varies significantly by article. |
 | Source label | Hardcoded "Wikipedia" | For attribution |
 | Thumbnail URL | `thumbnail.source` | Small image from the article |
 
@@ -98,12 +98,16 @@ Returns:
 | `originalimage` | Page summary | Full-resolution article image (better than thumbnail) |
 | `wikibase_item` | Page summary | Wikidata Q-ID (cross-reference) |
 | `content_urls` | Page summary | Links to desktop/mobile Wikipedia pages |
+| `extract_html` | Page summary | Same content as `extract` but with HTML formatting preserved |
+| `type` | Page summary | Can be `standard`, `disambiguation`, `no-extract`, or `mainpage`. Checking this can detect disambiguation pages programmatically. |
+| `revision` | Page summary | Revision ID, useful for cache invalidation |
+| `tid` | Page summary | Time-based UUID, useful for cache invalidation |
 
 ### Endpoints Not Yet Called
 
 | Endpoint | Data | Useful For |
 |----------|------|------------|
-| `GET /page/mobile-sections/{title}` | Article split into sections with headings | Structured bio: "Early life", "Career", "Discography", "Awards" |
+| `GET /page/mobile-sections/{title}` | *(deprecated -- removed in 2023)* | Was: article split into sections with headings |
 | `GET /page/media-list/{title}` | All media files on the page | ARTIST_PHOTO — band photos, concert shots, album covers |
 | `GET /page/related/{title}` | Related Wikipedia articles | Discovery / similar artists |
 | `GET /page/html/{title}` | Full HTML content | Rich content parsing (infobox data, tables) |
@@ -117,6 +121,14 @@ This data is in the HTML but not in the REST API summary. Parsing it requires ei
 - Fetching `/page/html/{title}` and parsing the infobox
 - Using the MediaWiki API (`action=parse`) with `prop=wikitext` and extracting template parameters
 - Or better: getting this data from Wikidata instead (structured, not HTML parsing)
+
+## Newer Wikimedia API
+
+A newer API exists at `https://api.wikimedia.org/core/v1/wikipedia/{language}/page/{title}` with OAuth2 support, cleaner design, and explicit language routing. May become the recommended path forward.
+
+## Language Support
+
+Other languages are accessible by changing the subdomain: `fr.wikipedia.org/api/rest_v1/...` for French, `de.wikipedia.org/api/rest_v1/...` for German, etc. Non-English artists may have better articles in their native language Wikipedia.
 
 ## Gotchas & Edge Cases
 

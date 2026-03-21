@@ -8,7 +8,7 @@
 |---|---|
 | **Base URL** | `https://api.deezer.com` |
 | **Auth** | None for search/public endpoints |
-| **Rate Limit** | 50 requests / 5 seconds (~10/s); we use 100ms |
+| **Rate Limit** | Not officially published; commonly cited as ~50 requests / 5 seconds. We use 100ms. |
 | **Format** | JSON |
 | **Reference Docs** | https://developers.deezer.com/api |
 | **Explorer** | https://developers.deezer.com/api/explorer |
@@ -112,6 +112,9 @@ We prefer `cover_xl` → `cover_big` → `cover_medium` → `cover_small`, with 
 - **Regional availability**: Some albums may not be available in all regions. The API returns them regardless.
 - **Preview URLs**: 30-second preview clips are available for most tracks — not currently relevant but interesting for future use.
 - **Deezer IDs are numeric**: Unlike MusicBrainz UUIDs, Deezer uses numeric IDs. No cross-reference unless you search.
+- **Docs behind login wall**: The full Deezer API documentation at developers.deezer.com requires login to view. Public third-party mirrors exist but may be outdated.
+- **OAuth 2.0 available**: For user-specific data (playlists, recommendations, favorites). Not needed for public search/catalog endpoints.
+- **API status (as of March 2026)**: The Deezer API remains publicly accessible with no sunset announcements. The Deezer Native SDK was deprecated but the REST API continues operating.
 
 ## Internal Architecture
 

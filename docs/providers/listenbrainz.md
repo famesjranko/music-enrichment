@@ -28,9 +28,18 @@ Returns a **JSON array** (not object — note: `fetchJsonArray()` not `fetchJson
     "artist_mbids": ["a74b1b7f-..."],
     "artist_name": "Radiohead",
     "recording_mbid": "b3015bab-...",
+    "recording_name": "Creep",
     "track_name": "Creep",
     "total_listen_count": 234567,
-    "total_user_count": 45678
+    "total_user_count": 45678,
+    "release": {
+      "mbid": "abc123-...",
+      "name": "Pablo Honey",
+      "color": [120, 80, 60]
+    },
+    "caa_id": 12345678,
+    "caa_release_mbid": "abc123-...",
+    "length": 238000
   }
 ]
 ```
@@ -51,24 +60,45 @@ Returns a **JSON array** (not object — note: `fetchJsonArray()` not `fetchJson
 | Field | Where | Useful For |
 |-------|-------|------------|
 | `total_user_count` | Each recording | Listener count (distinct users vs total plays) |
+| `recording_name` | Each recording | Duplicate of `track_name` |
+| `release` | Each recording | Object with `mbid`, `name`, `color` — links to release |
+| `caa_id` | Each recording | Cover Art Archive image ID |
+| `caa_release_mbid` | Each recording | Release MBID for Cover Art Archive lookup |
+| `length` | Each recording | Track duration in milliseconds |
 | `artist_mbids[]` | Each recording | Multiple artist MBIDs (for collaborations) |
 
 ### Endpoints Not Yet Called
 
+#### Popularity Endpoints
+
 | Endpoint | Data | Useful For |
 |----------|------|------------|
-| `GET /1/stats/artist/{mbid}/listeners` | Artist-level aggregate: total_listen_count, total_user_count | ARTIST_POPULARITY (aggregate, not just top tracks) |
-| `GET /1/popularity/recording/{mbid}` | Single recording stats | TRACK_POPULARITY (for specific track lookup) |
-| `GET /1/stats/sitewide/artists` | Global top artists | Rankings |
-| `GET /1/explore/fresh-releases` | Recent notable releases | Discovery |
-| `GET /1/popularity/top-recordings` | Global top recordings | Rankings |
+| `GET /1/popularity/top-release-groups-for-artist/{mbid}` | Top albums by listen count | HIGH VALUE — album popularity ranking |
+| `POST /1/popularity/recording` | Batch lookup: send `{"recording_mbids": [...]}`, get listen count + user count per recording | TRACK_POPULARITY (batch) |
+| `POST /1/popularity/artist` | Batch lookup: send `{"artist_mbids": [...]}`, get listen count + user count per artist | ARTIST_POPULARITY (batch) |
+| `POST /1/popularity/release` | Batch lookup for releases | RELEASE_POPULARITY (batch) |
+| `POST /1/popularity/release-group` | Batch lookup for release groups | RELEASE_GROUP_POPULARITY (batch) |
 
-### Recommendation Endpoints (future potential)
+#### Statistics Endpoints
+
+| Endpoint | Data | Useful For |
+|----------|------|------------|
+| `GET /1/stats/artist/{mbid}/listeners` | Top listeners for specific artist | ARTIST_POPULARITY |
+| `GET /1/stats/release-group/{mbid}/listeners` | Top listeners for specific release group | RELEASE_GROUP_POPULARITY |
+| `GET /1/stats/sitewide/artists` | Global top artists (params: `count`, `offset`, `range`) | Rankings |
+| `GET /1/stats/sitewide/recordings` | Global top recordings | Rankings |
+| `GET /1/stats/sitewide/releases` | Global top releases | Rankings |
+| `GET /1/stats/sitewide/release-groups` | Global top release groups | Rankings |
+
+Range parameter values: `this_week`, `this_month`, `this_year`, `week`, `month`, `quarter`, `year`, `half_yearly`, `all_time`.
+
+#### Recommendation Endpoints (future potential)
 
 | Endpoint | Data | Useful For |
 |----------|------|------------|
 | `GET /1/cf/recommendation/user/{user}/recording` | Collaborative filtering recommendations | Similar tracks |
 | `GET /1/explore/similar-artists/{mbid}` | Similar artists by listening patterns | SIMILAR_ARTISTS (alternative to Last.fm) |
+| `GET /1/explore/fresh-releases` | Recent notable releases | Discovery |
 
 ## Gotchas & Edge Cases
 
@@ -80,6 +110,7 @@ Returns a **JSON array** (not object — note: `fetchJsonArray()` not `fetchJson
 - **Empty array = no data**: Returns `[]` for unknown artists, not 404. We treat empty as `NotFound`.
 - **Open source**: ListenBrainz is part of the MetaBrainz ecosystem (same org as MusicBrainz). Data is CC0 licensed.
 - **Recording MBIDs**: The recording_mbid values can be used to look up full track details in MusicBrainz.
+- **Batch POST endpoints**: The popularity POST endpoints accept arrays of MBIDs and return results in the same order. Up to MAX_ITEMS_PER_GET items per request. Null values in the response indicate the entity was not found.
 
 ## Internal Architecture
 

@@ -8,7 +8,7 @@
 |---|---|
 | **Base URL** | `https://coverartarchive.org` |
 | **Auth** | None |
-| **Rate Limit** | None documented; we use 100ms between requests |
+| **Rate Limit** | None documented (but returns 503 when overloaded); we use 100ms between requests |
 | **Format** | Image redirects (307 → archive.org) or JSON metadata |
 | **Reference Docs** | https://musicbrainz.org/doc/Cover_Art_Archive/API |
 | **API Key Required** | No |
@@ -35,6 +35,14 @@ GET /release-group/{mbid}/front-{size}
 ```
 
 Falls back to the "best" front cover across all releases in the group.
+
+### Endpoints Available (Not Currently Used)
+
+```
+GET /release/{mbid}/back          → back cover (307 redirect or 404)
+GET /release/{mbid}/back-{size}   → back cover at specific size
+GET /release/{mbid}/{id}          → specific artwork by image ID
+```
 
 ## What We Extract
 
@@ -69,6 +77,8 @@ Response structure:
         "large": "http://archive.org/.../large.jpg",
         "small": "http://archive.org/.../small.jpg"
       },
+      // Note: "small" and "large" are deprecated aliases for "250" and "500" respectively.
+      // Prefer numeric keys ("250", "500", "1200") in new code.
       "approved": true,
       "id": 12345
     }
@@ -89,16 +99,13 @@ This endpoint gives us:
 
 ### Other Image Types Available
 
-```
-GET /release/{mbid}/back          → back cover
-GET /release/{mbid}/back-{size}   → back cover at size
-```
-
-Any image type from the `types` array can be requested:
+Any image type from the `types` array can be requested by name:
 ```
 GET /release/{mbid}/{type}
 GET /release/{mbid}/{type}-{size}
 ```
+
+See "Endpoints Available (Not Currently Used)" above for back cover and image-by-ID endpoints.
 
 ## Gotchas & Edge Cases
 
@@ -108,6 +115,7 @@ GET /release/{mbid}/{type}-{size}
 - **404 = no artwork**: Not an error, just means nobody has uploaded art for this release.
 - **Archive.org URLs are stable**: Once an image is on archive.org, the URL doesn't change. Safe to cache long-term.
 - **No rate limit headers**: CAA doesn't document rate limits, but it's backed by archive.org infrastructure. Be respectful.
+- **503 when overloaded**: The API returns HTTP 503 when overloaded, even though no formal rate limits are documented. Treat 503 as a transient error and retry with backoff.
 - **Size `1200` is our default**: High enough for most displays without being wasteful. Original images can be very large (4000px+).
 
 ## Internal Architecture

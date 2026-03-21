@@ -6,13 +6,15 @@
 
 | | |
 |---|---|
-| **Base URL** | `http://ws.audioscrobbler.com/2.0/` |
+| **Base URL** | `https://ws.audioscrobbler.com/2.0/` |
 | **Auth** | API key (query param `api_key`) |
 | **Rate Limit** | 5 requests/second (we use 200ms) |
 | **Format** | JSON (`&format=json`) |
 | **Reference Docs** | https://www.last.fm/api |
 | **Get API Key** | https://www.last.fm/api/account/create |
 | **API Key Required** | Yes |
+
+> **Note:** HTTPS is supported and recommended. API keys are sent as query parameters, so using HTTP exposes them in cleartext. Our code currently hardcodes `http://` — this should be updated.
 
 ## Getting an API Key
 
@@ -79,7 +81,7 @@ We extract: name, match (float 0-1), mbid.
 | Field | Where | Useful For |
 |-------|-------|------------|
 | `artist.bio.content` | artist.getinfo | Full bio text (not just summary) |
-| `artist.image[]` | artist.getinfo | Artist images at multiple sizes |
+| `artist.image[]` | artist.getinfo | Artist images at multiple sizes. **Warning:** Last.fm stopped serving most artist images ~2020. The `image` array still appears in responses but URLs are typically empty or broken. |
 | `artist.similar.artist[]` | artist.getinfo | Similar artists (redundant with getsimilar, but saves a call) |
 | `artist.url` | artist.getinfo | Last.fm profile URL |
 
@@ -90,11 +92,12 @@ We extract: name, match (float 0-1), mbid.
 | `artist.gettoptracks` | Top tracks by playcount | TRACK_POPULARITY, ARTIST_POPULARITY |
 | `artist.gettopalbums` | Top albums by playcount | Album rankings |
 | `album.getinfo` | Album bio, playcount, listeners, tags, wiki, images | Album metadata & popularity |
-| `album.getsimilar` | Similar albums | SIMILAR_ALBUMS |
 | `track.getinfo` | Track playcount, listeners, tags, wiki | TRACK_POPULARITY |
 | `track.getsimilar` | Similar tracks with match scores | SIMILAR_TRACKS |
 | `tag.gettopartists` | Top artists for a genre tag | Genre exploration |
 | `tag.gettopalbums` | Top albums for a genre tag | Genre exploration |
+| `chart.getTopArtists` | Sitewide top artists chart | Trending/popular artists |
+| `chart.getTopTracks` | Sitewide top tracks chart | Trending/popular tracks |
 
 ## Gotchas & Edge Cases
 
@@ -105,8 +108,12 @@ We extract: name, match (float 0-1), mbid.
 - **Tags are user-contributed**: Quality varies. "rock" and "alternative" are reliable; long-tail tags like "albums I listened to in 2019" appear but sort low. We sort by vote count.
 - **Empty API key = provider disabled**: `isAvailable` checks if the key is non-blank. Gracefully degrades.
 - **Rate limit**: 5 req/s is generous but shared across all Last.fm calls in a session. Our 200ms limiter stays within bounds.
-- **HTTP not HTTPS**: The API base URL uses `http://` — it works with HTTPS too but the official docs reference HTTP.
+- **HTTP not HTTPS**: The API base URL uses `http://` — it works with HTTPS too but the official docs reference HTTP. HTTPS is strongly recommended since API keys travel as query params.
 - **Stats are cumulative**: Listener/playcount numbers represent all-time Last.fm scrobbles. Active scrobblers skew toward certain demographics.
+- **`mbid` parameter**: Most methods accept an `mbid` parameter for MusicBrainz ID-based lookups instead of name matching. When available, prefer `mbid` over `artist`/`album`/`track` name params for precise results.
+- **`autocorrect` parameter**: Most methods accept `autocorrect=1` to enable fuzzy name matching (e.g., "Radiohd" corrects to "Radiohead"). Default is 0 (off).
+- **Error response format**: Errors return `{"error": <code>, "message": "..."}`. Key error codes: 6 = not found, 10 = invalid API key, 29 = rate limit exceeded.
+- **TRACK_POPULARITY mismatch**: The provider declares TRACK_POPULARITY capability but `enrichPopularity()` calls `artist.getinfo` which returns artist-level stats, not track-level data. This should use `track.getinfo` instead.
 
 ## Internal Architecture
 

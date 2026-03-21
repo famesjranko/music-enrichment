@@ -19,8 +19,10 @@
 1. Create an account at https://fanart.tv
 2. Go to https://fanart.tv/get-an-api-key/
 3. Register a project — you'll get a **project API key**
-4. Free tier gives access to all images. VIP members get early access to new uploads.
+4. Free tier gives access to images older than 7 days. VIP members get immediate access to all images including newly uploaded ones.
 5. Pass as `fanarttv.apikey` system property or `FANARTTV_API_KEY` env var
+
+The API also accepts an optional `client_key` query parameter alongside `api_key`. When provided with a VIP user's personal key, newly uploaded images (< 7 days old) become accessible.
 
 ## Endpoints We Use
 
@@ -50,6 +52,20 @@ Single endpoint returns ALL image types for an artist:
   }
 }
 ```
+
+### Endpoints Available (Not Currently Used)
+
+#### Album Images by Album MBID
+```
+GET /v3/music/albums/{album_mbid}?api_key={key}
+```
+Returns album images (`albumcover`, `cdart`) directly by album MBID without fetching the entire artist response. More efficient for `ForAlbum` requests.
+
+#### Label Images by Label MBID
+```
+GET /v3/music/labels/{label_mbid}?api_key={key}
+```
+Returns label images. Image type `musiclabel` (typically 400x270, transparent background).
 
 ## Image Types
 
@@ -101,8 +117,9 @@ The `albums` object is keyed by **album MBID**, but our provider receives the **
 - **Multiple images per type**: An artist might have 5 backgrounds. We currently take `[0]`. The `likes` field could be used to pick the most popular.
 - **Banner data is wasted**: `musicbanner` URLs are parsed into `FanartTvArtistImages.banners` but never mapped to an `EnrichmentType`. Adding `ARTIST_BANNER` would be trivial.
 - **Logo variants**: `hdmusiclogo` (800x310) and `musiclogo` (400x155) are separate. We only use HD. Could fall back to standard.
-- **Free API limits**: The free tier has full access but may have lower priority during high traffic.
+- **Free API limits**: The free tier has access to images older than 7 days. VIP is needed for newly uploaded images. May have lower priority during high traffic.
 - **404 for unknown artists**: If the artist MBID isn't in Fanart.tv's database, you get a 404.
+- **HTTP error codes**: 401 = invalid API key, 429 = rate limited (exact rate limits are undocumented). Treat 429 as transient and retry with backoff.
 - **Image hotlinking**: Fanart.tv URLs (`assets.fanart.tv/...`) can be used directly. No additional auth needed to fetch the image itself.
 
 ## Internal Architecture
