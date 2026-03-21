@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 06-tech-debt-cleanup/06-02-PLAN.md
-last_updated: "2026-03-21T16:14:35.994Z"
+stopped_at: Completed 06-tech-debt-cleanup/06-04-PLAN.md
+last_updated: "2026-03-21T16:19:37.540Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -44,6 +44,7 @@ Plan: 4 of 4
 | Phase 06-tech-debt-cleanup P01 | 8 | 2 tasks | 16 files |
 | Phase 06-tech-debt-cleanup P03 | 15 | 2 tasks | 12 files |
 | Phase 06-tech-debt-cleanup P02 | 15 | 2 tasks | 9 files |
+| Phase 06-tech-debt-cleanup P04 | 15 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,7 @@ Plan: 4 of 4
 - [Phase 06-tech-debt-cleanup]: ListenBrainzApi uses fetchJsonArrayResult/postJsonArrayResult (not fetchJsonResult) because all 4 endpoints return JSONArray responses
 - [Phase 06-tech-debt-cleanup]: CoverArtArchiveApi fetchRedirectUrl calls left unchanged — redirect pattern has no HttpResult equivalent and is semantically distinct from JSON fetches
 - [Phase 06-tech-debt-cleanup]: MusicBrainzApi rateLimiter.execute block uses return@execute null in else branch to preserve nullable return contract while using fetchJsonResult internally
+- [Phase 06-tech-debt-cleanup]: Discogs IDs stored via extra map keys discogsReleaseId/discogsMasterId consistent with withExtra pattern; masterId omitted when master_id=0 as Discogs uses 0 for absent master
 
 ### Pending Todos
 
@@ -71,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T16:14:35.992Z
-Stopped at: Completed 06-tech-debt-cleanup/06-02-PLAN.md
+Last session: 2026-03-21T16:19:37.538Z
+Stopped at: Completed 06-tech-debt-cleanup/06-04-PLAN.md
 Resume file: None

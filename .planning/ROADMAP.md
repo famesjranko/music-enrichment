@@ -24,7 +24,7 @@ Full details: `.planning/milestones/v0.4.0-ROADMAP.md`
 
 **Milestone Goal:** Complete the "app-ready" story with credits, release editions, artist timeline, genre enhancement, deeper provider coverage, and v0.4.0 tech debt cleanup.
 
-- [ ] **Phase 6: Tech Debt Cleanup** - Migrate all 11 providers to HttpResult/ErrorKind and wire ListenBrainz + Discogs IDs
+- [x] **Phase 6: Tech Debt Cleanup** - Migrate all 11 providers to HttpResult/ErrorKind and wire ListenBrainz + Discogs IDs (completed 2026-03-21)
 - [ ] **Phase 7: Credits & Personnel** - New CREDITS enrichment type from MusicBrainz and Discogs
 - [ ] **Phase 8: Release Editions** - New RELEASE_EDITIONS enrichment type from MusicBrainz and Discogs
 - [ ] **Phase 9: Artist Timeline** - New ARTIST_TIMELINE composite type synthesizing existing enrichment data
@@ -42,13 +42,13 @@ Full details: `.planning/milestones/v0.4.0-ROADMAP.md`
   2. Every provider maps API errors to the appropriate ErrorKind so error diagnostics are consistent across all 11 providers
   3. ListenBrainz appears in a provider chain for ARTIST_DISCOGRAPHY and returns results in E2E tests
   4. Discogs release ID and master ID are stored on EnrichmentIdentifiers after a successful Discogs search so downstream phases can use them without re-searching
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 06-01-PLAN.md — HttpClient extensions + Wikidata/Wikipedia/FanartTv/iTunes migration
 - [x] 06-02-PLAN.md — CoverArtArchive/LrcLib/MusicBrainz migration
 - [x] 06-03-PLAN.md — Deezer/Last.fm/Discogs/ListenBrainz migration
-- [ ] 06-04-PLAN.md — ListenBrainz ARTIST_DISCOGRAPHY wiring + Discogs ID storage
+- [x] 06-04-PLAN.md — ListenBrainz ARTIST_DISCOGRAPHY wiring + Discogs ID storage
 
 ### Phase 7: Credits & Personnel
 **Goal**: Consumers can retrieve track-level credits (performers, producers, composers, engineers) via a single CREDITS enrichment type backed by MusicBrainz and Discogs
@@ -115,7 +115,7 @@ Plans:
 | 3. Public API Cleanup | v0.4.0 | 2/2 | Complete | 2026-03-21 |
 | 4. New Types | v0.4.0 | 4/4 | Complete | 2026-03-21 |
 | 5. Deepening | v0.4.0 | 4/4 | Complete | 2026-03-21 |
-| 6. Tech Debt Cleanup | v0.5.0 | 3/4 | In Progress|  |
+| 6. Tech Debt Cleanup | v0.5.0 | 4/4 | Complete   | 2026-03-21 |
 | 7. Credits & Personnel | v0.5.0 | 0/TBD | Not started | - |
 | 8. Release Editions | v0.5.0 | 0/TBD | Not started | - |
 | 9. Artist Timeline | v0.5.0 | 0/TBD | Not started | - |
