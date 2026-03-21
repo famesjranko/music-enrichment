@@ -107,6 +107,8 @@ class DiscogsApi(
                 catno = obj.optString("catno").takeIf { it.isNotBlank() },
                 genres = genres,
                 styles = styles,
+                releaseId = obj.optLong("id", 0L).takeIf { it > 0 },
+                masterId = obj.optLong("master_id", 0L).takeIf { it > 0 },
             )
         }
     }

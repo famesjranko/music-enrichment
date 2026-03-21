@@ -9,6 +9,8 @@ import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -281,6 +283,73 @@ class DiscogsProviderTest {
         assertTrue(result is EnrichmentResult.Error)
         val error = result as EnrichmentResult.Error
         assertEquals(ErrorKind.NETWORK, error.errorKind)
+    }
+
+    @Test
+    fun `enrich stores Discogs release and master IDs`() = runTest {
+        // Given — search result with id and master_id fields
+        httpClient.givenJsonResponse("discogs.com", """{
+            "results": [{
+                "id": 99001,
+                "master_id": 55002,
+                "title": "Radiohead - OK Computer",
+                "label": ["Parlophone"],
+                "year": "1997",
+                "country": "UK",
+                "cover_image": "https://img.discogs.com/cover.jpg"
+            }]
+        }""")
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then
+        assertTrue(result is EnrichmentResult.Success)
+        val success = result as EnrichmentResult.Success
+        assertNotNull(success.resolvedIdentifiers)
+        assertEquals("99001", success.resolvedIdentifiers!!.get("discogsReleaseId"))
+        assertEquals("55002", success.resolvedIdentifiers!!.get("discogsMasterId"))
+    }
+
+    @Test
+    fun `enrich stores only release ID when master_id is 0`() = runTest {
+        // Given — search result with master_id of 0 (no master)
+        httpClient.givenJsonResponse("discogs.com", """{
+            "results": [{
+                "id": 99001,
+                "master_id": 0,
+                "title": "Radiohead - OK Computer",
+                "label": ["Parlophone"],
+                "year": "1997",
+                "cover_image": "https://img.discogs.com/cover.jpg"
+            }]
+        }""")
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then
+        assertTrue(result is EnrichmentResult.Success)
+        val success = result as EnrichmentResult.Success
+        assertEquals("99001", success.resolvedIdentifiers!!.get("discogsReleaseId"))
+        assertNull(success.resolvedIdentifiers!!.get("discogsMasterId"))
+    }
+
+    @Test
+    fun `enrich sets null resolvedIdentifiers when search result has no id`() = runTest {
+        // Given — search result without id fields
+        httpClient.givenJsonResponse("discogs.com", SEARCH_RESULTS_JSON)
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then
+        assertTrue(result is EnrichmentResult.Success)
+        val success = result as EnrichmentResult.Success
+        assertNull(success.resolvedIdentifiers)
     }
 
     private companion object {

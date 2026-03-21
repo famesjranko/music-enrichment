@@ -10,6 +10,8 @@ data class DiscogsRelease(
     val catno: String? = null,
     val genres: List<String>? = null,
     val styles: List<String>? = null,
+    val releaseId: Long? = null,
+    val masterId: Long? = null,
 )
 
 data class DiscogsArtist(

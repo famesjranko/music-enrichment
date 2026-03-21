@@ -1,6 +1,7 @@
 package com.landofoz.musicmeta.provider.discogs
 
 import com.landofoz.musicmeta.EnrichmentData
+import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -108,13 +109,29 @@ class DiscogsProvider(
             EnrichmentType.ALBUM_METADATA -> DiscogsMapper.toAlbumMetadata(release)
             else -> null
         } ?: return EnrichmentResult.NotFound(type, id)
-        return success(data, type)
+        return success(data, type, release)
     }
 
-    private fun success(data: EnrichmentData, type: EnrichmentType) = EnrichmentResult.Success(
+    private fun buildResolvedIdentifiers(release: DiscogsRelease): EnrichmentIdentifiers? {
+        var ids = EnrichmentIdentifiers()
+        if (release.releaseId != null) {
+            ids = ids.withExtra("discogsReleaseId", release.releaseId.toString())
+        }
+        if (release.masterId != null) {
+            ids = ids.withExtra("discogsMasterId", release.masterId.toString())
+        }
+        return if (ids.extra.isEmpty()) null else ids
+    }
+
+    private fun success(
+        data: EnrichmentData,
+        type: EnrichmentType,
+        release: DiscogsRelease? = null,
+    ) = EnrichmentResult.Success(
         type = type,
         data = data,
         provider = id,
         confidence = ConfidenceCalculator.fuzzyMatch(hasArtistMatch = false),
+        resolvedIdentifiers = release?.let { buildResolvedIdentifiers(it) },
     )
 }
