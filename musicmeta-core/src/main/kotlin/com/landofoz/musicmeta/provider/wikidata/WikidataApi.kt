@@ -28,7 +28,14 @@ class WikidataApi(
         val claims = json.optJSONObject("claims") ?: return null
         val p18 = claims.optJSONArray("P18") ?: return null
         if (p18.length() == 0) return null
-        return p18.getJSONObject(0)
+
+        // Find preferred-rank claim, or fall back to the first claim
+        val preferred = (0 until p18.length())
+            .map { p18.getJSONObject(it) }
+            .firstOrNull { it.optString("rank") == "preferred" }
+        val claim = preferred ?: p18.getJSONObject(0)
+
+        return claim
             .optJSONObject("mainsnak")
             ?.optJSONObject("datavalue")
             ?.optString("value")
