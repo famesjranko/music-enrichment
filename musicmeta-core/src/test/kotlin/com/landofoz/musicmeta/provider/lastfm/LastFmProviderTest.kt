@@ -187,6 +187,43 @@ class LastFmProviderTest {
         assertEquals(null, data.listenCount)
     }
 
+    @Test
+    fun `API calls use HTTPS`() = runTest {
+        // Given — valid artist info response configured
+        httpClient.givenJsonResponse("artist.getinfo", ARTIST_INFO_JSON)
+        val request = EnrichmentRequest.forArtist(name = "Radiohead")
+
+        // When — any API call is made
+        provider.enrich(request, EnrichmentType.GENRE)
+
+        // Then — all requested URLs use HTTPS
+        assertTrue(httpClient.requestedUrls.isNotEmpty())
+        assertTrue(httpClient.requestedUrls.all { it.startsWith("https://") })
+    }
+
+    @Test
+    fun `capabilities do not include TRACK_POPULARITY`() {
+        // Given — provider instance
+
+        // When — checking capabilities
+
+        // Then — no capability has type TRACK_POPULARITY
+        assertTrue(provider.capabilities.none { it.type == EnrichmentType.TRACK_POPULARITY })
+    }
+
+    @Test
+    fun `enrich returns NotFound for TRACK_POPULARITY`() = runTest {
+        // Given — valid artist info response configured
+        httpClient.givenJsonResponse("artist.getinfo", ARTIST_INFO_JSON)
+        val request = EnrichmentRequest.forArtist(name = "Radiohead")
+
+        // When — enriching for TRACK_POPULARITY
+        val result = provider.enrich(request, EnrichmentType.TRACK_POPULARITY)
+
+        // Then — NotFound because Last.fm does not support track-level popularity
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
         val ARTIST_INFO_JSON = """
             {
