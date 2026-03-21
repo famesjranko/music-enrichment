@@ -91,6 +91,31 @@ class ProviderRegistryTest {
         assertEquals("fallback", (result as EnrichmentResult.Success).provider)
     }
 
+    @Test fun `identityProvider returns provider with isIdentityProvider flag`() {
+        // Given — registry with one identity provider and one normal provider
+        val identity = FakeProvider(id = "mb", isIdentityProvider = true, capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
+        val normal = FakeProvider(id = "other", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100)))
+        val registry = ProviderRegistry(listOf(identity, normal))
+
+        // When — requesting identity provider
+        val result = registry.identityProvider()
+
+        // Then — returns the provider with isIdentityProvider=true
+        assertEquals("mb", result?.id)
+    }
+
+    @Test fun `identityProvider returns null when no provider has isIdentityProvider`() {
+        // Given — registry with providers that have GENRE capability but no isIdentityProvider flag
+        val p = FakeProvider(id = "p", capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
+        val registry = ProviderRegistry(listOf(p))
+
+        // When — requesting identity provider
+        val result = registry.identityProvider()
+
+        // Then — returns null (no provider has isIdentityProvider=true)
+        assertNull(result)
+    }
+
     @Test fun `priorityOverrides does not affect non-matching types`() = runTest {
         // Given — provider with ALBUM_ART (100) and GENRE (80)
         val p = FakeProvider(id = "p", capabilities = listOf(

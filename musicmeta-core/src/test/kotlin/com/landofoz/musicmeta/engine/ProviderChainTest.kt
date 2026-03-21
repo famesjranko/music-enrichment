@@ -1,9 +1,11 @@
 package com.landofoz.musicmeta.engine
 
 import com.landofoz.musicmeta.EnrichmentData
+import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.http.CircuitBreaker
 import com.landofoz.musicmeta.testutil.FakeProvider
@@ -79,7 +81,7 @@ class ProviderChainTest {
 
     @Test fun `resolve skips providers needing identifiers when missing`() = runTest {
         // Given — p1 requires MBID (request has none), p2 doesn't
-        val p1 = FakeProvider(id = "p1", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100, requiresIdentifier = true)))
+        val p1 = FakeProvider(id = "p1", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID)))
             .also { it.givenResult(EnrichmentType.ALBUM_ART, art("p1")) }
         val p2 = FakeProvider(id = "p2", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 50)))
             .also { it.givenResult(EnrichmentType.ALBUM_ART, art("p2")) }
@@ -89,6 +91,41 @@ class ProviderChainTest {
 
         // Then — p1 skipped, p2 used
         assertEquals("p2", (result as EnrichmentResult.Success).provider)
+    }
+
+    @Test fun `resolve skips WikidataProvider-like when request has no wikidataId even with musicBrainzId`() = runTest {
+        // Given — p1 requires WIKIDATA_ID, request has musicBrainzId but no wikidataId
+        val reqWithMbid = EnrichmentRequest.ForAlbum(
+            EnrichmentIdentifiers(musicBrainzId = "some-mbid"),
+            "OK Computer", "Radiohead",
+        )
+        val p1 = FakeProvider(id = "wikidata", capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100, identifierRequirement = IdentifierRequirement.WIKIDATA_ID)))
+            .also { it.givenResult(EnrichmentType.GENRE, EnrichmentResult.Success(EnrichmentType.GENRE, EnrichmentData.Metadata(genres = listOf("rock")), "wikidata", 0.9f)) }
+        val p2 = FakeProvider(id = "fallback", capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 50)))
+            .also { it.givenResult(EnrichmentType.GENRE, EnrichmentResult.Success(EnrichmentType.GENRE, EnrichmentData.Metadata(genres = listOf("alt")), "fallback", 0.7f)) }
+
+        // When — resolving
+        val result = ProviderChain(EnrichmentType.GENRE, listOf(p1, p2)).resolve(reqWithMbid)
+
+        // Then — p1 skipped (needs wikidataId), p2 used
+        assertEquals("fallback", (result as EnrichmentResult.Success).provider)
+        assertEquals(0, p1.enrichCalls.size)
+    }
+
+    @Test fun `resolve allows CoverArtArchive-like when request has musicBrainzId but no wikidataId`() = runTest {
+        // Given — p1 requires MUSICBRAINZ_ID, request has musicBrainzId but no wikidataId
+        val reqWithMbid = EnrichmentRequest.ForAlbum(
+            EnrichmentIdentifiers(musicBrainzId = "some-mbid"),
+            "OK Computer", "Radiohead",
+        )
+        val p1 = FakeProvider(id = "caa", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("caa")) }
+
+        // When — resolving
+        val result = ProviderChain(EnrichmentType.ALBUM_ART, listOf(p1)).resolve(reqWithMbid)
+
+        // Then — p1 allowed (has musicBrainzId)
+        assertEquals("caa", (result as EnrichmentResult.Success).provider)
     }
 
     @Test fun `resolve returns NotFound when all providers exhausted`() = runTest {
