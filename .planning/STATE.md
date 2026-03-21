@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 08-release-editions/08-02-PLAN.md
-last_updated: "2026-03-21T17:13:19.880Z"
+stopped_at: Completed 09-artist-timeline/09-01-PLAN.md
+last_updated: "2026-03-21T17:25:18.446Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Consumers get comprehensive, accurate music metadata from a single enrich() call without knowing which APIs exist, how they authenticate, or how to correlate identifiers across services.
-**Current focus:** Phase 08 — Release Editions
+**Current focus:** Phase 09 — Artist Timeline
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
+Phase: 09 (Artist Timeline) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: Not started
 | Phase 07-credits-personnel P02 | 20 | 2 tasks | 5 files |
 | Phase 08-release-editions P01 | 4 | 2 tasks | 10 files |
 | Phase 08-release-editions P02 | 8 | 2 tasks | 6 files |
+| Phase 09-artist-timeline P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Plan: Not started
 - [Phase 08-release-editions]: RELEASE_EDITIONS dispatch guard placed after CREDITS guard in enrich(), consistent with established type-check guard pattern
 - [Phase 08-release-editions]: enrichAlbumEditions reads discogsMasterId from identifiers.extra (Phase 6 DEBT-04 dependency), not by fuzzy search — enables precise lookup
 - [Phase 08-release-editions]: barcode=null in toReleaseEditions — Discogs master versions API flat response does not include barcode field
+- [Phase 09-artist-timeline]: TimelineSynthesizer.synthesize() accepts EnrichmentResult? so callers pass raw results without unwrapping — simplifies Plan 02 integration
+- [Phase 09-artist-timeline]: null artistType in Metadata defaults to Group behavior (formed/disbanded) — most MusicBrainz artists without explicit type are groups
+- [Phase 09-artist-timeline]: TimelineEvent placed as top-level @Serializable class, consistent with BandMember, DiscographyAlbum, etc.
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T17:09:57.096Z
-Stopped at: Completed 08-release-editions/08-02-PLAN.md
+Last session: 2026-03-21T17:25:18.443Z
+Stopped at: Completed 09-artist-timeline/09-01-PLAN.md
 Resume file: None
