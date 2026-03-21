@@ -1,6 +1,5 @@
 package com.landofoz.musicmeta.provider.wikipedia
 
-import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentLogger
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
@@ -55,11 +54,7 @@ class WikipediaProvider(
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.Biography(
-                text = summary.extract,
-                source = "Wikipedia",
-                thumbnailUrl = summary.thumbnailUrl,
-            ),
+            data = WikipediaMapper.toBiography(summary),
             provider = id,
             confidence = CONFIDENCE,
         )

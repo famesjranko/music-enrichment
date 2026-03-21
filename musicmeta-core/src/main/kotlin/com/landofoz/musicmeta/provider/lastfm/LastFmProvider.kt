@@ -6,7 +6,6 @@ import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.ProviderCapability
-import com.landofoz.musicmeta.SimilarArtist
 import com.landofoz.musicmeta.http.HttpClient
 import com.landofoz.musicmeta.http.RateLimiter
 
@@ -65,16 +64,7 @@ class LastFmProvider(
     ): EnrichmentResult {
         val similar = api.getSimilarArtists(request.name)
         if (similar.isEmpty()) return EnrichmentResult.NotFound(type, id)
-        val data = EnrichmentData.SimilarArtists(
-            artists = similar.map {
-                SimilarArtist(
-                    name = it.name,
-                    musicBrainzId = it.mbid,
-                    matchScore = it.matchScore,
-                )
-            },
-        )
-        return success(data, type)
+        return success(LastFmMapper.toSimilarArtists(similar), type)
     }
 
     private suspend fun enrichGenre(
@@ -83,7 +73,7 @@ class LastFmProvider(
     ): EnrichmentResult {
         val tags = api.getArtistTopTags(request.name)
         if (tags.isEmpty()) return EnrichmentResult.NotFound(type, id)
-        return success(EnrichmentData.Metadata(genres = tags), type)
+        return success(LastFmMapper.toGenre(tags), type)
     }
 
     private suspend fun enrichBio(
@@ -93,7 +83,7 @@ class LastFmProvider(
         val info = api.getArtistInfo(request.name)
             ?: return EnrichmentResult.NotFound(type, id)
         val bio = info.bio ?: return EnrichmentResult.NotFound(type, id)
-        return success(EnrichmentData.Biography(text = bio, source = "Last.fm"), type)
+        return success(LastFmMapper.toBiography(bio), type)
     }
 
     private suspend fun enrichPopularity(
@@ -102,13 +92,7 @@ class LastFmProvider(
     ): EnrichmentResult {
         val info = api.getArtistInfo(request.name)
             ?: return EnrichmentResult.NotFound(type, id)
-        return success(
-            EnrichmentData.Popularity(
-                listenerCount = info.listeners,
-                listenCount = info.playcount,
-            ),
-            type,
-        )
+        return success(LastFmMapper.toPopularity(info), type)
     }
 
     private fun success(data: EnrichmentData, type: EnrichmentType) = EnrichmentResult.Success(

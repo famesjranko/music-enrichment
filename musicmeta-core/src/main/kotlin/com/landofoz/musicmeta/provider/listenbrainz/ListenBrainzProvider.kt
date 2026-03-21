@@ -1,11 +1,9 @@
 package com.landofoz.musicmeta.provider.listenbrainz
 
-import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
-import com.landofoz.musicmeta.PopularTrack
 import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.http.HttpClient
@@ -51,16 +49,7 @@ class ListenBrainzProvider(
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.Popularity(
-                topTracks = tracks.mapIndexed { index, track ->
-                    PopularTrack(
-                        title = track.title,
-                        musicBrainzId = track.recordingMbid,
-                        listenCount = track.listenCount,
-                        rank = index + 1,
-                    )
-                },
-            ),
+            data = ListenBrainzMapper.toPopularity(tracks),
             provider = id,
             confidence = CONFIDENCE,
         )

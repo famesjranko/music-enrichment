@@ -1,6 +1,5 @@
 package com.landofoz.musicmeta.provider.wikidata
 
-import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -49,7 +48,7 @@ class WikidataProvider(
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.Artwork(url = imageUrl),
+            data = WikidataMapper.toArtwork(imageUrl),
             provider = id,
             confidence = CONFIDENCE,
         )

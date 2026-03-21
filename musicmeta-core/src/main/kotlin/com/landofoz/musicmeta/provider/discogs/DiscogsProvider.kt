@@ -62,24 +62,13 @@ class DiscogsProvider(
         release: DiscogsRelease,
         type: EnrichmentType,
     ): EnrichmentResult {
-        return when (type) {
-            EnrichmentType.ALBUM_ART -> {
-                val url = release.coverImage
-                    ?: return EnrichmentResult.NotFound(type, id)
-                success(EnrichmentData.Artwork(url = url), type)
-            }
-            EnrichmentType.LABEL -> {
-                val label = release.label
-                    ?: return EnrichmentResult.NotFound(type, id)
-                success(EnrichmentData.Metadata(label = label), type)
-            }
-            EnrichmentType.RELEASE_TYPE -> {
-                val releaseType = release.releaseType
-                    ?: return EnrichmentResult.NotFound(type, id)
-                success(EnrichmentData.Metadata(releaseType = releaseType), type)
-            }
-            else -> EnrichmentResult.NotFound(type, id)
-        }
+        val data = when (type) {
+            EnrichmentType.ALBUM_ART -> DiscogsMapper.toArtwork(release)
+            EnrichmentType.LABEL -> DiscogsMapper.toLabelMetadata(release)
+            EnrichmentType.RELEASE_TYPE -> DiscogsMapper.toReleaseTypeMetadata(release)
+            else -> null
+        } ?: return EnrichmentResult.NotFound(type, id)
+        return success(data, type)
     }
 
     private fun success(data: EnrichmentData, type: EnrichmentType) = EnrichmentResult.Success(

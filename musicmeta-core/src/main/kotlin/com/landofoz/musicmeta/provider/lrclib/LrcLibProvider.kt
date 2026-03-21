@@ -1,6 +1,5 @@
 package com.landofoz.musicmeta.provider.lrclib
 
-import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -82,14 +81,10 @@ class LrcLibProvider(
         type: EnrichmentType,
         confidence: Float,
     ): EnrichmentResult {
-        val lyrics = EnrichmentData.Lyrics(
-            syncedLyrics = result.syncedLyrics?.takeIf { it.isNotBlank() },
-            plainLyrics = result.plainLyrics?.takeIf { it.isNotBlank() },
-            isInstrumental = result.instrumental,
-        )
+        val lyrics = LrcLibMapper.toLyrics(result)
 
         // If requesting synced lyrics but only plain is available, still return
-        // the data — the caller can decide whether to use plain as fallback.
+        // the data -- the caller can decide whether to use plain as fallback.
         if (!result.instrumental && lyrics.syncedLyrics == null && lyrics.plainLyrics == null) {
             return EnrichmentResult.NotFound(type, id)
         }

@@ -1,6 +1,5 @@
 package com.landofoz.musicmeta.provider.coverartarchive
 
-import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -66,10 +65,7 @@ class CoverArtArchiveProvider(
                 val thumbUrl = api.getArtworkUrl(releaseId, thumbnailSize)
                 return EnrichmentResult.Success(
                     type = type,
-                    data = EnrichmentData.Artwork(
-                        url = url,
-                        thumbnailUrl = thumbUrl,
-                    ),
+                    data = CoverArtArchiveMapper.toArtwork(url, thumbUrl),
                     provider = id,
                     confidence = 1.0f,
                 )
@@ -83,10 +79,7 @@ class CoverArtArchiveProvider(
                 val thumbUrl = api.getGroupArtworkUrl(groupId, thumbnailSize)
                 return EnrichmentResult.Success(
                     type = type,
-                    data = EnrichmentData.Artwork(
-                        url = url,
-                        thumbnailUrl = thumbUrl,
-                    ),
+                    data = CoverArtArchiveMapper.toArtwork(url, thumbUrl),
                     provider = id,
                     confidence = 1.0f,
                 )

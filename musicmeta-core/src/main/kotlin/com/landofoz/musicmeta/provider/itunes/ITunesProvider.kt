@@ -1,7 +1,5 @@
 package com.landofoz.musicmeta.provider.itunes
 
-import com.landofoz.musicmeta.EnrichmentData
-import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -67,32 +65,21 @@ class ITunesProvider(
             ArtistMatcher.isMatch(request.artist, it.artistName)
         }
 
-        if (result?.artworkUrl == null) return EnrichmentResult.NotFound(type, id)
+        if (result == null) return EnrichmentResult.NotFound(type, id)
 
-        val highResUrl = result.artworkUrl.replace("100x100bb", "${artworkSize}x${artworkSize}bb")
+        val artwork = ITunesMapper.toArtwork(result, artworkSize)
+            ?: return EnrichmentResult.NotFound(type, id)
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.Artwork(url = highResUrl, thumbnailUrl = result.artworkUrl),
+            data = artwork,
             provider = id,
             confidence = CONFIDENCE,
         )
     }
 
-    private fun ITunesAlbumResult.toCandidate(): SearchCandidate {
-        val year = releaseDate?.take(4) // "2003-06-09T07:00:00Z" → "2003"
-        return SearchCandidate(
-            title = collectionName,
-            artist = artistName,
-            year = year,
-            country = country,
-            releaseType = null,
-            score = SEARCH_SCORE,
-            thumbnailUrl = artworkUrl,
-            identifiers = EnrichmentIdentifiers(),
-            provider = id,
-        )
-    }
+    private fun ITunesAlbumResult.toCandidate(): SearchCandidate =
+        ITunesMapper.toSearchCandidate(this, id, SEARCH_SCORE)
 
     companion object {
         const val DEFAULT_ARTWORK_SIZE = 1200

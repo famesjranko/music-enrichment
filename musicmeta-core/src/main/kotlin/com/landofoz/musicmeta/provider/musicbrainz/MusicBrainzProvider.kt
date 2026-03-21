@@ -1,6 +1,5 @@
 package com.landofoz.musicmeta.provider.musicbrainz
 
-import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
@@ -188,13 +187,10 @@ class MusicBrainzProvider(
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.Metadata(
-                genres = best.tags.takeIf { it.isNotEmpty() },
-                isrc = best.isrcs.firstOrNull(),
-            ),
+            data = MusicBrainzMapper.toTrackMetadata(best),
             provider = id,
             confidence = best.score / 100f,
-            resolvedIdentifiers = EnrichmentIdentifiers(musicBrainzId = best.id),
+            resolvedIdentifiers = MusicBrainzMapper.toTrackIdentifiers(best),
         )
     }
 
@@ -202,55 +198,25 @@ class MusicBrainzProvider(
         release: MusicBrainzRelease,
         type: EnrichmentType,
         confidence: Float,
-    ): EnrichmentResult.Success {
-        val metadata = EnrichmentData.Metadata(
-            genres = release.tags.takeIf { it.isNotEmpty() },
-            label = release.label,
-            releaseDate = release.date,
-            releaseType = release.releaseType,
-            country = release.country,
-            barcode = release.barcode,
-            disambiguation = release.disambiguation,
-        )
-        val resolvedIds = EnrichmentIdentifiers(
-            musicBrainzId = release.id,
-            musicBrainzReleaseGroupId = release.releaseGroupId,
-        )
-        return EnrichmentResult.Success(
-            type = type,
-            data = metadata,
-            provider = id,
-            confidence = confidence,
-            resolvedIdentifiers = resolvedIds,
-        )
-    }
+    ): EnrichmentResult.Success = EnrichmentResult.Success(
+        type = type,
+        data = MusicBrainzMapper.toAlbumMetadata(release),
+        provider = id,
+        confidence = confidence,
+        resolvedIdentifiers = MusicBrainzMapper.toAlbumIdentifiers(release),
+    )
 
     private fun buildArtistResult(
         artist: MusicBrainzArtist,
         type: EnrichmentType,
         confidence: Float,
-    ): EnrichmentResult.Success {
-        val metadata = EnrichmentData.Metadata(
-            genres = artist.tags.takeIf { it.isNotEmpty() },
-            country = artist.country,
-            disambiguation = artist.disambiguation,
-            artistType = artist.type,
-            beginDate = artist.beginDate,
-            endDate = artist.endDate,
-        )
-        val resolvedIds = EnrichmentIdentifiers(
-            musicBrainzId = artist.id,
-            wikidataId = artist.wikidataId,
-            wikipediaTitle = artist.wikipediaTitle,
-        )
-        return EnrichmentResult.Success(
-            type = type,
-            data = metadata,
-            provider = id,
-            confidence = confidence,
-            resolvedIdentifiers = resolvedIds,
-        )
-    }
+    ): EnrichmentResult.Success = EnrichmentResult.Success(
+        type = type,
+        data = MusicBrainzMapper.toArtistMetadata(artist),
+        provider = id,
+        confidence = confidence,
+        resolvedIdentifiers = MusicBrainzMapper.toArtistIdentifiers(artist),
+    )
 
     /**
      * Rank artist candidates: exact name match with tags > exact name match >

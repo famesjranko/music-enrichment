@@ -1,7 +1,5 @@
 package com.landofoz.musicmeta.provider.deezer
 
-import com.landofoz.musicmeta.EnrichmentData
-import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
@@ -65,29 +63,19 @@ class DeezerProvider(
 
         if (result == null) return EnrichmentResult.NotFound(type, id)
 
-        val artworkUrl = result.coverXl ?: result.coverBig
-            ?: result.coverMedium ?: result.coverSmall
+        val artwork = DeezerMapper.toArtwork(result)
             ?: return EnrichmentResult.NotFound(type, id)
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.Artwork(url = artworkUrl, thumbnailUrl = result.coverMedium),
+            data = artwork,
             provider = id,
             confidence = CONFIDENCE,
         )
     }
 
-    private fun DeezerAlbumResult.toCandidate() = SearchCandidate(
-        title = title,
-        artist = artistName,
-        year = null,
-        country = null,
-        releaseType = null,
-        score = SEARCH_SCORE,
-        thumbnailUrl = coverMedium ?: coverSmall,
-        identifiers = EnrichmentIdentifiers(),
-        provider = this@DeezerProvider.id,
-    )
+    private fun DeezerAlbumResult.toCandidate() =
+        DeezerMapper.toSearchCandidate(this, this@DeezerProvider.id, SEARCH_SCORE)
 
     private companion object {
         /** Fuzzy search by artist+title against large catalog. First result may not be exact match. */
