@@ -26,7 +26,7 @@ Full details: `.planning/milestones/v0.4.0-ROADMAP.md`
 
 - [x] **Phase 6: Tech Debt Cleanup** - Migrate all 11 providers to HttpResult/ErrorKind and wire ListenBrainz + Discogs IDs (completed 2026-03-21)
 - [ ] **Phase 7: Credits & Personnel** - New CREDITS enrichment type from MusicBrainz and Discogs
-- [ ] **Phase 8: Release Editions** - New RELEASE_EDITIONS enrichment type from MusicBrainz and Discogs
+- [x] **Phase 8: Release Editions** - New RELEASE_EDITIONS enrichment type from MusicBrainz and Discogs (completed 2026-03-21)
 - [ ] **Phase 9: Artist Timeline** - New ARTIST_TIMELINE composite type synthesizing existing enrichment data
 - [ ] **Phase 10: Genre Enhancement** - Multi-provider genre merging with per-tag confidence scores
 - [ ] **Phase 11: Provider Coverage Expansion** - Deeper coverage from Last.fm, iTunes, Fanart.tv, ListenBrainz, and Discogs
@@ -73,11 +73,11 @@ Plans:
   1. User can request EnrichmentType.RELEASE_EDITIONS for an album and receive a list of editions with at least title, year, country, and format
   2. MusicBrainz returns editions from the release-group releases endpoint at priority 100
   3. Discogs returns editions from the master versions endpoint at priority 50
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 08-01-PLAN.md — RELEASE_EDITIONS data model + MusicBrainz release-group editions (API, parser, mapper, provider)
-- [ ] 08-02-PLAN.md — Discogs master versions editions (API, models, mapper, provider)
+- [x] 08-02-PLAN.md — Discogs master versions editions (API, models, mapper, provider)
 
 ### Phase 9: Artist Timeline
 **Goal**: Consumers can retrieve a structured chronological artist timeline that synthesizes life-span, discography, and band-member changes without making separate enrichment calls
@@ -125,7 +125,7 @@ Plans:
 | 5. Deepening | v0.4.0 | 4/4 | Complete | 2026-03-21 |
 | 6. Tech Debt Cleanup | v0.5.0 | 4/4 | Complete   | 2026-03-21 |
 | 7. Credits & Personnel | v0.5.0 | 1/2 | In Progress|  |
-| 8. Release Editions | v0.5.0 | 1/2 | In Progress|  |
+| 8. Release Editions | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
 | 9. Artist Timeline | v0.5.0 | 0/TBD | Not started | - |
 | 10. Genre Enhancement | v0.5.0 | 0/TBD | Not started | - |
 | 11. Provider Coverage Expansion | v0.5.0 | 0/TBD | Not started | - |

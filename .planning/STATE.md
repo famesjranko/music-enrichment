@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 08-release-editions/08-01-PLAN.md
-last_updated: "2026-03-21T17:04:24.792Z"
+stopped_at: Completed 08-release-editions/08-02-PLAN.md
+last_updated: "2026-03-21T17:09:57.099Z"
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -48,6 +48,7 @@ Plan: 2 of 2
 | Phase 07-credits-personnel P01 | 25 | 2 tasks | 10 files |
 | Phase 07-credits-personnel P02 | 20 | 2 tasks | 5 files |
 | Phase 08-release-editions P01 | 4 | 2 tasks | 10 files |
+| Phase 08-release-editions P02 | 8 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Plan: 2 of 2
 - [Phase 08-release-editions]: lookupReleaseGroup returns raw JSONObject (same pattern as lookupRecording) — release sub-structures are complex and only needed for editions
 - [Phase 08-release-editions]: RELEASE_EDITIONS dispatch guard placed after ALBUM_TRACKS guard in enrichAlbum, consistent with existing pattern
 - [Phase 08-release-editions]: parseReleaseGroupDetail extracts format from media[0].format and label/catalogNumber from label-info[0] — first medium and first label only
+- [Phase 08-release-editions]: RELEASE_EDITIONS dispatch guard placed after CREDITS guard in enrich(), consistent with established type-check guard pattern
+- [Phase 08-release-editions]: enrichAlbumEditions reads discogsMasterId from identifiers.extra (Phase 6 DEBT-04 dependency), not by fuzzy search — enables precise lookup
+- [Phase 08-release-editions]: barcode=null in toReleaseEditions — Discogs master versions API flat response does not include barcode field
 
 ### Pending Todos
 
@@ -85,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T17:04:24.790Z
-Stopped at: Completed 08-release-editions/08-01-PLAN.md
+Last session: 2026-03-21T17:09:57.096Z
+Stopped at: Completed 08-release-editions/08-02-PLAN.md
 Resume file: None
