@@ -121,12 +121,7 @@ class MusicBrainzProvider(
         if (mbid != null) {
             val full = api.lookupRelease(mbid)
                 ?: return EnrichmentResult.NotFound(type, id)
-            return EnrichmentResult.Success(
-                type = type,
-                data = buildAlbumResolution(full),
-                provider = id,
-                confidence = 1.0f,
-            )
+            return buildAlbumResult(full, type, 1.0f)
         }
 
         val releases = api.searchReleases(request.title, request.artist)
@@ -145,12 +140,7 @@ class MusicBrainzProvider(
             best
         }
 
-        return EnrichmentResult.Success(
-            type = type,
-            data = buildAlbumResolution(resolved),
-            provider = id,
-            confidence = best.score / 100f,
-        )
+        return buildAlbumResult(resolved, type, best.score / 100f)
     }
 
     private suspend fun enrichArtist(
@@ -162,12 +152,7 @@ class MusicBrainzProvider(
         if (mbid != null) {
             val full = api.lookupArtist(mbid)
                 ?: return EnrichmentResult.NotFound(type, id)
-            return EnrichmentResult.Success(
-                type = type,
-                data = buildArtistResolution(full),
-                provider = id,
-                confidence = 1.0f,
-            )
+            return buildArtistResult(full, type, 1.0f)
         }
 
         val artists = api.searchArtists(request.name)
@@ -188,12 +173,7 @@ class MusicBrainzProvider(
             best
         }
 
-        return EnrichmentResult.Success(
-            type = type,
-            data = buildArtistResolution(resolved),
-            provider = id,
-            confidence = best.score / 100f,
-        )
+        return buildArtistResult(resolved, type, best.score / 100f)
     }
 
     private suspend fun enrichTrack(
@@ -208,51 +188,69 @@ class MusicBrainzProvider(
 
         return EnrichmentResult.Success(
             type = type,
-            data = EnrichmentData.IdentifierResolution(
-                musicBrainzId = best.id,
-                score = best.score,
-                metadata = EnrichmentData.Metadata(
-                    genres = best.tags.takeIf { it.isNotEmpty() },
-                    isrc = best.isrcs.firstOrNull(),
-                ),
+            data = EnrichmentData.Metadata(
+                genres = best.tags.takeIf { it.isNotEmpty() },
+                isrc = best.isrcs.firstOrNull(),
             ),
             provider = id,
             confidence = best.score / 100f,
+            resolvedIdentifiers = EnrichmentIdentifiers(musicBrainzId = best.id),
         )
     }
 
-    private fun buildAlbumResolution(release: MusicBrainzRelease): EnrichmentData.IdentifierResolution =
-        EnrichmentData.IdentifierResolution(
+    private fun buildAlbumResult(
+        release: MusicBrainzRelease,
+        type: EnrichmentType,
+        confidence: Float,
+    ): EnrichmentResult.Success {
+        val metadata = EnrichmentData.Metadata(
+            genres = release.tags.takeIf { it.isNotEmpty() },
+            label = release.label,
+            releaseDate = release.date,
+            releaseType = release.releaseType,
+            country = release.country,
+            barcode = release.barcode,
+            disambiguation = release.disambiguation,
+        )
+        val resolvedIds = EnrichmentIdentifiers(
             musicBrainzId = release.id,
             musicBrainzReleaseGroupId = release.releaseGroupId,
-            score = release.score,
-            hasFrontCover = release.hasFrontCover,
-            metadata = EnrichmentData.Metadata(
-                genres = release.tags.takeIf { it.isNotEmpty() },
-                label = release.label,
-                releaseDate = release.date,
-                releaseType = release.releaseType,
-                country = release.country,
-                barcode = release.barcode,
-                disambiguation = release.disambiguation,
-            ),
         )
+        return EnrichmentResult.Success(
+            type = type,
+            data = metadata,
+            provider = id,
+            confidence = confidence,
+            resolvedIdentifiers = resolvedIds,
+        )
+    }
 
-    private fun buildArtistResolution(artist: MusicBrainzArtist): EnrichmentData.IdentifierResolution =
-        EnrichmentData.IdentifierResolution(
+    private fun buildArtistResult(
+        artist: MusicBrainzArtist,
+        type: EnrichmentType,
+        confidence: Float,
+    ): EnrichmentResult.Success {
+        val metadata = EnrichmentData.Metadata(
+            genres = artist.tags.takeIf { it.isNotEmpty() },
+            country = artist.country,
+            disambiguation = artist.disambiguation,
+            artistType = artist.type,
+            beginDate = artist.beginDate,
+            endDate = artist.endDate,
+        )
+        val resolvedIds = EnrichmentIdentifiers(
             musicBrainzId = artist.id,
             wikidataId = artist.wikidataId,
             wikipediaTitle = artist.wikipediaTitle,
-            score = artist.score,
-            metadata = EnrichmentData.Metadata(
-                genres = artist.tags.takeIf { it.isNotEmpty() },
-                country = artist.country,
-                disambiguation = artist.disambiguation,
-                artistType = artist.type,
-                beginDate = artist.beginDate,
-                endDate = artist.endDate,
-            ),
         )
+        return EnrichmentResult.Success(
+            type = type,
+            data = metadata,
+            provider = id,
+            confidence = confidence,
+            resolvedIdentifiers = resolvedIds,
+        )
+    }
 
     /**
      * Rank artist candidates: exact name match with tags > exact name match >

@@ -39,9 +39,9 @@ class MusicBrainzProviderTest {
         assertEquals("musicbrainz", success.provider)
         assertEquals(0.98f, success.confidence, 0.01f)
 
-        val data = success.data as EnrichmentData.IdentifierResolution
-        assertEquals("abc123", data.musicBrainzId)
-        assertEquals("group123", data.musicBrainzReleaseGroupId)
+        assertTrue(success.data is EnrichmentData.Metadata)
+        assertEquals("abc123", success.resolvedIdentifiers?.musicBrainzId)
+        assertEquals("group123", success.resolvedIdentifiers?.musicBrainzReleaseGroupId)
     }
 
     @Test
@@ -68,8 +68,9 @@ class MusicBrainzProviderTest {
 
         // Then — Wikidata ID extracted from the relation URL
         assertTrue(result is EnrichmentResult.Success)
-        val data = (result as EnrichmentResult.Success).data as EnrichmentData.IdentifierResolution
-        assertEquals("Q188451", data.wikidataId)
+        val success = result as EnrichmentResult.Success
+        assertTrue(success.data is EnrichmentData.Metadata)
+        assertEquals("Q188451", success.resolvedIdentifiers?.wikidataId)
     }
 
     @Test
@@ -83,8 +84,9 @@ class MusicBrainzProviderTest {
 
         // Then — Wikipedia title extracted from the en.wikipedia.org URL
         assertTrue(result is EnrichmentResult.Success)
-        val data = (result as EnrichmentResult.Success).data as EnrichmentData.IdentifierResolution
-        assertEquals("Radiohead", data.wikipediaTitle)
+        val success = result as EnrichmentResult.Success
+        assertTrue(success.data is EnrichmentData.Metadata)
+        assertEquals("Radiohead", success.resolvedIdentifiers?.wikipediaTitle)
     }
 
     @Test
@@ -166,8 +168,9 @@ class MusicBrainzProviderTest {
 
         // Then — recording MBID resolved successfully
         assertTrue(result is EnrichmentResult.Success)
-        val data = (result as EnrichmentResult.Success).data as EnrichmentData.IdentifierResolution
-        assertEquals("rec1", data.musicBrainzId)
+        val success = result as EnrichmentResult.Success
+        assertTrue(success.data is EnrichmentData.Metadata)
+        assertEquals("rec1", success.resolvedIdentifiers?.musicBrainzId)
     }
 
     companion object {
