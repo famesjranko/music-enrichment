@@ -539,6 +539,77 @@ class DefaultEnrichmentEngineTest {
         assertTrue("ARTIST_DISCOGRAPHY should be in results", results[EnrichmentType.ARTIST_DISCOGRAPHY] is EnrichmentResult.Success)
     }
 
+    // --- Genre merging via mergeable type path (GENR-02, GENR-03, GENR-04) ---
+
+    private fun genreProviderWithTags(id: String, tags: List<GenreTag>) =
+        FakeProvider(id = id, capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
+            .also { it.givenResult(EnrichmentType.GENRE, EnrichmentResult.Success(EnrichmentType.GENRE, EnrichmentData.Metadata(genreTags = tags), id, 0.9f)) }
+
+    @Test fun `GENRE type merges results from multiple providers`() = runTest {
+        // Given — two providers each returning Metadata with different genreTags
+        val p1 = genreProviderWithTags("p1", listOf(GenreTag("rock", 0.8f, listOf("p1"))))
+        val p2 = genreProviderWithTags("p2", listOf(GenreTag("alternative", 0.7f, listOf("p2")), GenreTag("rock", 0.6f, listOf("p2"))))
+
+        // When — enriching with GENRE
+        val results = engine(p1, p2).enrich(req, setOf(EnrichmentType.GENRE))
+
+        // Then — result is Success with merged genreTags (rock combined from both providers)
+        val result = results[EnrichmentType.GENRE] as EnrichmentResult.Success
+        val metadata = result.data as EnrichmentData.Metadata
+        assertNotNull("genreTags should not be null", metadata.genreTags)
+        val tagNames = metadata.genreTags!!.map { it.name }
+        assertTrue("rock should be in merged tags", "rock" in tagNames)
+        assertTrue("alternative should be in merged tags", "alternative" in tagNames)
+        // rock was contributed by 2 providers, should have higher confidence
+        val rockTag = metadata.genreTags!!.first { it.name == "rock" }
+        assertTrue("rock confidence should be additive from both providers", rockTag.confidence > 0.8f)
+    }
+
+    @Test fun `GENRE merged result populates backward-compatible genres list`() = runTest {
+        // Given — two providers each returning genreTags
+        val p1 = genreProviderWithTags("p1", listOf(GenreTag("rock", 0.9f, listOf("p1")), GenreTag("alternative", 0.7f, listOf("p1"))))
+        val p2 = genreProviderWithTags("p2", listOf(GenreTag("indie", 0.6f, listOf("p2"))))
+
+        // When — enriching with GENRE
+        val results = engine(p1, p2).enrich(req, setOf(EnrichmentType.GENRE))
+
+        // Then — genres list is populated from top merged tag names
+        val result = results[EnrichmentType.GENRE] as EnrichmentResult.Success
+        val metadata = result.data as EnrichmentData.Metadata
+        assertNotNull("genres list should be populated for backward compatibility", metadata.genres)
+        assertTrue("genres should contain rock", "rock" in metadata.genres!!)
+        assertTrue("genres should contain alternative", "alternative" in metadata.genres!!)
+    }
+
+    @Test fun `GENRE merge uses genre_merger as provider`() = runTest {
+        // Given — one provider with genreTags
+        val p1 = genreProviderWithTags("p1", listOf(GenreTag("jazz", 0.9f, listOf("p1"))))
+
+        // When — enriching with GENRE
+        val results = engine(p1).enrich(req, setOf(EnrichmentType.GENRE))
+
+        // Then — provider field is genre_merger
+        val result = results[EnrichmentType.GENRE] as EnrichmentResult.Success
+        assertEquals("genre_merger", result.provider)
+    }
+
+    @Test fun `non-GENRE types still short-circuit on first success`() = runTest {
+        // Given — two providers both capable of ALBUM_ART; first one succeeds
+        val artResult = EnrichmentResult.Success(EnrichmentType.ALBUM_ART, EnrichmentData.Artwork("https://x.com/art.jpg"), "p1", 0.95f)
+        val p1 = FakeProvider(id = "p1", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, artResult) }
+        val p2 = FakeProvider(id = "p2", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 50)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("p2")) }
+
+        // When — enriching with ALBUM_ART
+        val results = engine(p1, p2).enrich(req, setOf(EnrichmentType.ALBUM_ART))
+
+        // Then — p1 wins, p2 never called (short-circuit preserved)
+        val result = results[EnrichmentType.ALBUM_ART] as EnrichmentResult.Success
+        assertEquals("p1", result.provider)
+        assertEquals(0, p2.enrichCalls.size)
+    }
+
     @Test fun `ARTIST_TIMELINE is cached like standard types`() = runTest {
         // Given — identity provider + discography + band members providers
         val idProvider = identityProviderWithMetadata()

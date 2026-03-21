@@ -166,20 +166,36 @@ class DefaultEnrichmentEngine(
         val compositeTypes = types.filter { it in COMPOSITE_DEPENDENCIES }
         val standardTypes = types - compositeTypes.toSet()
 
+        // Split standard types into mergeable (e.g. GENRE) vs regular (short-circuit)
+        val mergeableTypes = standardTypes.filter { it in MERGEABLE_TYPES }.toSet()
+        val regularTypes = standardTypes - mergeableTypes
+
         // Composite types need sub-type resolution first
         val compositeSubTypes = compositeTypes
             .flatMap { COMPOSITE_DEPENDENCIES[it] ?: emptySet() }
-            .toSet() - standardTypes
+            .toSet() - regularTypes - mergeableTypes
 
-        // Resolve standard types + composite sub-types concurrently
-        val allToResolve = standardTypes + compositeSubTypes
-        val resolved = allToResolve.map { type ->
+        // Resolve regular types + composite sub-types concurrently (short-circuit behavior)
+        val allRegularToResolve = regularTypes + compositeSubTypes
+        val resolved = allRegularToResolve.map { type ->
             async {
                 val chain = registry.chainFor(type)
                 val result = chain?.resolve(request) ?: EnrichmentResult.NotFound(type, "no_provider")
                 type to filterByConfidence(result)
             }
         }.awaitAll().toMap().toMutableMap()
+
+        // Resolve mergeable types — collect ALL provider results then merge
+        for (mergeType in mergeableTypes) {
+            val deferred = async {
+                val chain = registry.chainFor(mergeType)
+                val allResults = chain?.resolveAll(request) ?: emptyList()
+                // Apply confidence filter per-result before merge
+                val filtered = allResults.mapNotNull { filterByConfidence(it) as? EnrichmentResult.Success }
+                mergeType to mergeGenreResults(mergeType, filtered)
+            }
+            resolved[mergeType] = deferred.await().second
+        }
 
         // Synthesize composite types from resolved sub-types
         for (compositeType in compositeTypes) {
@@ -188,6 +204,37 @@ class DefaultEnrichmentEngine(
 
         // Only return types the caller requested — exclude internal sub-types
         resolved.filterKeys { it in types }
+    }
+
+    private fun mergeGenreResults(
+        type: EnrichmentType,
+        results: List<EnrichmentResult.Success>,
+    ): EnrichmentResult {
+        if (results.isEmpty()) return EnrichmentResult.NotFound(type, "all_providers")
+
+        // Collect all genreTags from Metadata results
+        val allTags = results.flatMap { result ->
+            (result.data as? EnrichmentData.Metadata)?.genreTags.orEmpty()
+        }
+        if (allTags.isEmpty()) {
+            // Fallback: return first success as-is (providers may not have genreTags yet)
+            return results.first()
+        }
+
+        val merged = GenreMerger.merge(allTags)
+        val topGenres = merged.take(10).map { it.name }
+        val maxConfidence = results.maxOf { it.confidence }
+
+        return EnrichmentResult.Success(
+            type = type,
+            data = EnrichmentData.Metadata(
+                genres = topGenres.takeIf { it.isNotEmpty() },
+                genreTags = merged.takeIf { it.isNotEmpty() },
+            ),
+            provider = "genre_merger",
+            confidence = maxConfidence,
+            resolvedIdentifiers = results.firstNotNullOfOrNull { it.resolvedIdentifiers },
+        )
     }
 
     private fun synthesizeComposite(
@@ -258,6 +305,9 @@ class DefaultEnrichmentEngine(
 
     companion object {
         private const val TAG = "EnrichmentEngine"
+
+        /** EnrichmentTypes that collect ALL provider results and merge them instead of short-circuiting. */
+        private val MERGEABLE_TYPES = setOf(EnrichmentType.GENRE)
 
         /** Maps composite EnrichmentTypes to their required sub-type dependencies. */
         private val COMPOSITE_DEPENDENCIES = mapOf(
