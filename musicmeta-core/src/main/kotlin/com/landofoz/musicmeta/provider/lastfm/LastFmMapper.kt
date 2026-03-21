@@ -36,6 +36,17 @@ object LastFmMapper {
             },
         )
 
+    fun toAlbumMetadata(info: LastFmAlbumInfo): EnrichmentData.Metadata {
+        val genreTagList = info.tags.map { tag ->
+            GenreTag(name = tag, confidence = 0.3f, sources = listOf("lastfm"))
+        }.takeIf { it.isNotEmpty() }
+        return EnrichmentData.Metadata(
+            genres = info.tags.takeIf { it.isNotEmpty() },
+            genreTags = genreTagList,
+            trackCount = info.trackCount,
+        )
+    }
+
     fun toGenre(tags: List<String>): EnrichmentData.Metadata =
         EnrichmentData.Metadata(
             genres = tags,

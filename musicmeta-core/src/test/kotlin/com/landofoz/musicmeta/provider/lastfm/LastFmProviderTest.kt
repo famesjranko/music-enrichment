@@ -9,6 +9,7 @@ import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -305,7 +306,110 @@ class LastFmProviderTest {
         assertEquals(ErrorKind.NETWORK, error.errorKind)
     }
 
+    // ALBUM_METADATA capability tests
+
+    @Test
+    fun `capabilities include ALBUM_METADATA at priority 40`() {
+        // Given — provider instance
+
+        // When — checking capabilities
+        val capability = provider.capabilities.find { it.type == EnrichmentType.ALBUM_METADATA }
+
+        // Then — ALBUM_METADATA capability exists with priority 40
+        assertNotNull(capability)
+        assertEquals(40, capability!!.priority)
+    }
+
+    @Test
+    fun `enrich returns album metadata from album getinfo`() = runTest {
+        // Given — Last.fm returns album.getinfo JSON for OK Computer
+        httpClient.givenJsonResponse("album.getinfo", ALBUM_INFO_JSON)
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When — enriching for ALBUM_METADATA
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — Success with Metadata containing trackCount and genres
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertEquals(12, data.trackCount)
+        assertEquals(listOf("Alternative Rock", "Art Rock"), data.genres)
+    }
+
+    @Test
+    fun `enrich returns album metadata with genreTags`() = runTest {
+        // Given — Last.fm returns album.getinfo JSON with tags
+        httpClient.givenJsonResponse("album.getinfo", ALBUM_INFO_JSON)
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When — enriching for ALBUM_METADATA
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — Success with genreTags at confidence 0.3f with source "lastfm"
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        val tags = data.genreTags
+        assertNotNull(tags)
+        assertEquals(2, tags!!.size)
+        assertEquals("Alternative Rock", tags[0].name)
+        assertEquals(0.3f, tags[0].confidence)
+        assertEquals(listOf("lastfm"), tags[0].sources)
+    }
+
+    @Test
+    fun `enrich returns NotFound for ALBUM_METADATA when album not found`() = runTest {
+        // Given — Last.fm returns error JSON for album not found
+        httpClient.givenJsonResponse("album.getinfo", """{"error":6,"message":"Album not found"}""")
+        val request = EnrichmentRequest.forAlbum(title = "Nonexistent", artist = "Nobody")
+
+        // When — enriching for ALBUM_METADATA
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — NotFound
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich returns NotFound for ALBUM_METADATA with ForArtist request`() = runTest {
+        // Given — ForArtist request (ALBUM_METADATA requires ForAlbum)
+        val request = EnrichmentRequest.forArtist(name = "Radiohead")
+
+        // When — enriching for ALBUM_METADATA
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — NotFound because ALBUM_METADATA requires ForAlbum
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
+        val ALBUM_INFO_JSON = """
+            {
+              "album": {
+                "name": "OK Computer",
+                "artist": "Radiohead",
+                "playcount": "5000000",
+                "listeners": "800000",
+                "tags": {
+                  "tag": [
+                    {"name": "Alternative Rock"},
+                    {"name": "Art Rock"}
+                  ]
+                },
+                "wiki": {
+                  "summary": "OK Computer is the third studio album by Radiohead."
+                },
+                "tracks": {
+                  "track": [
+                    {"name": "Airbag"}, {"name": "Paranoid Android"}, {"name": "Subterranean Homesick Alien"},
+                    {"name": "Exit Music (For a Film)"}, {"name": "Let Down"}, {"name": "Karma Police"},
+                    {"name": "Fitter Happier"}, {"name": "Electioneering"}, {"name": "Climbing Up the Walls"},
+                    {"name": "No Surprises"}, {"name": "Lucky"}, {"name": "The Tourist"}
+                  ]
+                }
+              }
+            }
+        """.trimIndent()
+
         val SIMILAR_TRACKS_JSON = """
             {
               "similartracks": {

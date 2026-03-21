@@ -63,6 +63,17 @@ class LastFmApi(
         return parseSimilarTracks(json)
     }
 
+    suspend fun getAlbumInfo(album: String, artist: String): LastFmAlbumInfo? {
+        val url = buildAlbumUrl("album.getinfo", album, artist)
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return null
+        return parseAlbumInfo(json)
+    }
+
     suspend fun getTrackInfo(trackTitle: String, artistName: String): LastFmTrackInfo? {
         val url = buildTrackUrl("track.getInfo", trackTitle, artistName)
         val json = rateLimiter.execute {
@@ -72,6 +83,12 @@ class LastFmApi(
             }
         } ?: return null
         return parseTrackInfo(json)
+    }
+
+    private fun buildAlbumUrl(method: String, album: String, artist: String): String {
+        val encodedAlbum = URLEncoder.encode(album, "UTF-8")
+        val encodedArtist = URLEncoder.encode(artist, "UTF-8")
+        return "$BASE_URL?method=$method&album=$encodedAlbum&artist=$encodedArtist&api_key=${apiKeyProvider()}&format=json"
     }
 
     private fun buildTrackUrl(method: String, trackTitle: String, artistName: String): String {
@@ -135,6 +152,31 @@ class LastFmApi(
             playcount = track.optString("playcount")?.toLongOrNull(),
             listeners = track.optString("listeners")?.toLongOrNull(),
             mbid = track.optString("mbid").takeIf { it.isNotBlank() },
+        )
+    }
+
+    private fun parseAlbumInfo(json: JSONObject): LastFmAlbumInfo? {
+        val album = json.optJSONObject("album") ?: return null
+        val artistVal = album.optJSONObject("artist")?.optString("name")
+            ?: album.optString("artist", "")
+        val tagsObj = album.optJSONObject("tags")
+        val tagArray = tagsObj?.optJSONArray("tag")
+        val tags = if (tagArray != null) {
+            (0 until tagArray.length()).map { i ->
+                tagArray.getJSONObject(i).optString("name", "")
+            }.filter { it.isNotBlank() }
+        } else emptyList()
+        val wiki = album.optJSONObject("wiki")?.optString("summary")?.takeIf { it.isNotBlank() }
+        val tracksObj = album.optJSONObject("tracks")
+        val trackCount = tracksObj?.optJSONArray("track")?.length()?.takeIf { it > 0 }
+        return LastFmAlbumInfo(
+            name = album.optString("name", ""),
+            artist = artistVal,
+            playcount = album.optString("playcount")?.toLongOrNull(),
+            listeners = album.optString("listeners")?.toLongOrNull(),
+            tags = tags,
+            wiki = wiki,
+            trackCount = trackCount,
         )
     }
 

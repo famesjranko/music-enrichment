@@ -1,5 +1,15 @@
 package com.landofoz.musicmeta.provider.lastfm
 
+data class LastFmAlbumInfo(
+    val name: String,
+    val artist: String,
+    val playcount: Long?,
+    val listeners: Long?,
+    val tags: List<String>,
+    val wiki: String?,
+    val trackCount: Int?,
+)
+
 data class LastFmArtistInfo(
     val name: String,
     val bio: String?,

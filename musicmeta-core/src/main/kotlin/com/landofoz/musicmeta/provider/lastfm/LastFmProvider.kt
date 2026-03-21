@@ -39,6 +39,7 @@ class LastFmProvider(
         ProviderCapability(EnrichmentType.ARTIST_POPULARITY, priority = 100),
         ProviderCapability(EnrichmentType.SIMILAR_TRACKS, priority = 100),
         ProviderCapability(EnrichmentType.TRACK_POPULARITY, priority = 100),
+        ProviderCapability(EnrichmentType.ALBUM_METADATA, priority = 40),
     )
 
     override suspend fun enrich(
@@ -46,6 +47,17 @@ class LastFmProvider(
         type: EnrichmentType,
     ): EnrichmentResult {
         if (!isAvailable) return EnrichmentResult.NotFound(type, id)
+
+        // ALBUM_METADATA requires a ForAlbum request
+        if (type == EnrichmentType.ALBUM_METADATA) {
+            val albumRequest = request as? EnrichmentRequest.ForAlbum
+                ?: return EnrichmentResult.NotFound(type, id)
+            return try {
+                enrichAlbumMetadata(albumRequest, type)
+            } catch (e: Exception) {
+                mapError(type, e)
+            }
+        }
 
         // SIMILAR_TRACKS and TRACK_POPULARITY require a ForTrack request; all others require ForArtist
         if (type == EnrichmentType.SIMILAR_TRACKS || type == EnrichmentType.TRACK_POPULARITY) {
@@ -140,6 +152,19 @@ class LastFmProvider(
         val info = api.getArtistInfo(request.name)
             ?: return EnrichmentResult.NotFound(type, id)
         return success(LastFmMapper.toPopularity(info), type)
+    }
+
+    private suspend fun enrichAlbumMetadata(
+        request: EnrichmentRequest.ForAlbum,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        val info = api.getAlbumInfo(request.title, request.artist)
+            ?: return EnrichmentResult.NotFound(type, id)
+        val metadata = LastFmMapper.toAlbumMetadata(info)
+        if (metadata.genres.isNullOrEmpty() && metadata.trackCount == null) {
+            return EnrichmentResult.NotFound(type, id)
+        }
+        return success(metadata, type)
     }
 
     private fun success(data: EnrichmentData, type: EnrichmentType) = EnrichmentResult.Success(
