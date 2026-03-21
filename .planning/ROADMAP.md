@@ -47,7 +47,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 02-01-PLAN.md — Typed IdentifierRequirement enum, identity provider formalization, data-driven needsIdentityResolution
-- [ ] 02-02-PLAN.md — Remove IdentifierResolution from EnrichmentData, rework identity resolution pathway
+- [x] 02-02-PLAN.md — Remove IdentifierResolution from EnrichmentData, rework identity resolution pathway
 - [ ] 02-03-PLAN.md — Extract 11 mapper files, add ApiKeyConfig and Builder.withDefaultProviders()
 
 ### Phase 3: Public API Cleanup
