@@ -99,7 +99,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — ALBUM_ART_BACK and ALBUM_BOOKLET types via Cover Art Archive JSON endpoint
 - [x] 05-02-PLAN.md — Last.fm track.getInfo for TRACK_POPULARITY, ListenBrainz batch endpoints
-- [ ] 05-03-PLAN.md — Album metadata from Deezer/iTunes/Discogs, Wikipedia page media for ARTIST_PHOTO
+- [x] 05-03-PLAN.md — Album metadata from Deezer/iTunes/Discogs, Wikipedia page media for ARTIST_PHOTO
 - [ ] 05-04-PLAN.md — ConfidenceCalculator utility and provider-wide confidence standardization
 
 ## Progress

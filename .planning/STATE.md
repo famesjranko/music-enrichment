@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: Provider Abstraction Overhaul
 status: unknown
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-21T09:54:06.869Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-21T10:02:24.246Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Position
 
 Phase: 05 (Deepening) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Plan: 3 of 4
 | Phase 04-new-types P04 | 8min | 2 tasks | 20 files |
 | Phase 05-deepening P01 | 4min | 2 tasks | 6 files |
 | Phase 05-deepening P02 | 5min | 2 tasks | 10 files |
+| Phase 05-deepening P03 | 5min | 2 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Plan: 3 of 4
 - [Phase 05-deepening]: Last.fm TRACK_POPULARITY uses track.getInfo for track-level playcount, not artist.getinfo
 - [Phase 05-deepening]: ListenBrainz batch POST endpoints return JSON arrays; postJsonArray added to HttpClient
 - [Phase 05-deepening]: ListenBrainz ARTIST_POPULARITY uses batch-first with top-recordings fallback
+- [Phase 05-deepening]: ALBUM_METADATA as distinct EnrichmentType rather than enriching existing GENRE/LABEL types
+- [Phase 05-deepening]: Wikipedia ARTIST_PHOTO at priority 30, confidence 0.7 as supplemental behind Wikidata/Fanart.tv
+- [Phase 05-deepening]: Media-list filtering: SVG extension, icon/logo title substring, <100px width exclusion
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:54:06.866Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-21T10:02:24.243Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
