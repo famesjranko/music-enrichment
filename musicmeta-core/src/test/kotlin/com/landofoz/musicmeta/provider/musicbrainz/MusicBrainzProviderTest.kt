@@ -6,6 +6,7 @@ import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.ErrorKind
+import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
@@ -282,6 +283,76 @@ class MusicBrainzProviderTest {
         assertEquals(ErrorKind.NETWORK, (result as EnrichmentResult.Error).errorKind)
     }
 
+    @Test
+    fun `provider has CREDITS capability at priority 100 with MUSICBRAINZ_ID requirement`() {
+        // Given -- provider capabilities list
+        val capability = provider.capabilities.find { it.type == EnrichmentType.CREDITS }
+
+        // Then -- CREDITS capability exists with correct priority and identifier requirement
+        assertNotNull(capability)
+        assertEquals(100, capability!!.priority)
+        assertEquals(com.landofoz.musicmeta.IdentifierRequirement.MUSICBRAINZ_ID, capability.identifierRequirement)
+    }
+
+    @Test
+    fun `enrich ForTrack CREDITS with MBID returns Success with credits`() = runTest {
+        // Given -- recording lookup returns artist-rels and work-rels
+        httpClient.givenJsonResponse("recording/rec1", RECORDING_WITH_CREDITS_JSON)
+        val request = EnrichmentRequest.forTrack("Paranoid Android", "Radiohead")
+            .withIdentifiers(EnrichmentIdentifiers(musicBrainzId = "rec1"))
+
+        // When -- enriching for CREDITS
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then -- Success with Credits data, at least 3 credits, confidence 1.0
+        assertTrue("Expected Success but got $result", result is EnrichmentResult.Success)
+        val success = result as EnrichmentResult.Success
+        val data = success.data as EnrichmentData.Credits
+        assertTrue("Expected >= 3 credits, got ${data.credits.size}", data.credits.size >= 3)
+        assertEquals(1.0f, success.confidence, 0.001f)
+    }
+
+    @Test
+    fun `enrich ForTrack CREDITS returns NotFound when recording has no relations`() = runTest {
+        // Given -- recording with empty relations
+        httpClient.givenJsonResponse("recording/rec1", """{"id":"rec1","title":"Song","relations":[]}""")
+        val request = EnrichmentRequest.forTrack("Song", "Artist")
+            .withIdentifiers(EnrichmentIdentifiers(musicBrainzId = "rec1"))
+
+        // When -- enriching for CREDITS
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then -- NotFound because no credits parsed
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich ForTrack CREDITS returns NotFound when no MBID`() = runTest {
+        // Given -- ForTrack request without MBID
+        val request = EnrichmentRequest.forTrack("Song", "Artist")
+
+        // When -- enriching for CREDITS directly (no MBID)
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then -- NotFound because no MBID available for lookup
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich ForTrack CREDITS returns Error with NETWORK ErrorKind on IOException`() = runTest {
+        // Given -- recording lookup throws IOException
+        httpClient.givenIoException("recording/")
+        val request = EnrichmentRequest.forTrack("Song", "Artist")
+            .withIdentifiers(EnrichmentIdentifiers(musicBrainzId = "rec1"))
+
+        // When -- enriching for CREDITS
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then -- Error with NETWORK ErrorKind
+        assertTrue("Expected Error but got $result", result is EnrichmentResult.Error)
+        assertEquals(ErrorKind.NETWORK, (result as EnrichmentResult.Error).errorKind)
+    }
+
     companion object {
         private val RELEASE_SEARCH_HIGH_SCORE = """
             {
@@ -478,6 +549,43 @@ class MusicBrainzProviderTest {
                 "isrcs": ["GBAYE9700100"],
                 "tags": [{"name": "alternative rock", "count": 3}]
               }]
+            }
+        """.trimIndent()
+
+        private val RECORDING_WITH_CREDITS_JSON = """
+            {
+              "id": "rec1",
+              "title": "Paranoid Android",
+              "relations": [
+                {
+                  "type": "vocal",
+                  "target-type": "artist",
+                  "artist": {"id": "ty1", "name": "Thom Yorke"},
+                  "attributes": ["lead vocals"]
+                },
+                {
+                  "type": "producer",
+                  "target-type": "artist",
+                  "artist": {"id": "ng1", "name": "Nigel Godrich"},
+                  "attributes": []
+                },
+                {
+                  "type": "performance",
+                  "target-type": "work",
+                  "work": {
+                    "id": "work1",
+                    "title": "Paranoid Android",
+                    "relations": [
+                      {
+                        "type": "composer",
+                        "target-type": "artist",
+                        "artist": {"id": "ty1", "name": "Thom Yorke"},
+                        "attributes": []
+                      }
+                    ]
+                  }
+                }
+              ]
             }
         """.trimIndent()
     }

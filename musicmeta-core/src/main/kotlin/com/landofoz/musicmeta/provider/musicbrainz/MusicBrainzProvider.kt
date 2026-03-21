@@ -6,6 +6,7 @@ import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.ErrorKind
+import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.SearchCandidate
 import com.landofoz.musicmeta.engine.ConfidenceCalculator
@@ -41,6 +42,11 @@ class MusicBrainzProvider(
         ProviderCapability(EnrichmentType.ARTIST_DISCOGRAPHY, priority = 100),
         ProviderCapability(EnrichmentType.ALBUM_TRACKS, priority = 100),
         ProviderCapability(EnrichmentType.ARTIST_LINKS, priority = 100),
+        ProviderCapability(
+            EnrichmentType.CREDITS,
+            priority = 100,
+            identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
+        ),
     )
 
     override suspend fun resolveIdentity(request: EnrichmentRequest): EnrichmentResult =
@@ -223,6 +229,8 @@ class MusicBrainzProvider(
         request: EnrichmentRequest.ForTrack,
         type: EnrichmentType,
     ): EnrichmentResult {
+        if (type == EnrichmentType.CREDITS) return enrichTrackCredits(request)
+
         val recordings = api.searchRecordings(request.title, request.artist)
         if (recordings.isEmpty()) return EnrichmentResult.NotFound(type, id)
 
@@ -235,6 +243,24 @@ class MusicBrainzProvider(
             provider = id,
             confidence = ConfidenceCalculator.searchScore(best.score),
             resolvedIdentifiers = MusicBrainzMapper.toTrackIdentifiers(best),
+        )
+    }
+
+    private suspend fun enrichTrackCredits(
+        request: EnrichmentRequest.ForTrack,
+    ): EnrichmentResult {
+        val type = EnrichmentType.CREDITS
+        val mbid = request.identifiers.musicBrainzId
+            ?: return EnrichmentResult.NotFound(type, id)
+        val json = api.lookupRecording(mbid)
+            ?: return EnrichmentResult.NotFound(type, id)
+        val credits = MusicBrainzParser.parseRecordingCredits(json)
+        if (credits.isEmpty()) return EnrichmentResult.NotFound(type, id)
+        return EnrichmentResult.Success(
+            type = type,
+            data = MusicBrainzMapper.toCredits(credits),
+            provider = id,
+            confidence = ConfidenceCalculator.idBasedLookup(),
         )
     }
 
