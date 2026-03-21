@@ -22,7 +22,7 @@ Consumers get comprehensive, accurate music metadata from a single `enrich()` ca
 
 ## Current State
 
-Shipped v0.4.0, Phase 6 tech debt complete. All 11 providers use HttpResult/ErrorKind uniformly. ListenBrainz ARTIST_DISCOGRAPHY wired. Discogs stores release/master IDs for downstream phases.
+Phase 7 complete. 26 enrichment types (CREDITS added). All 11 providers use HttpResult/ErrorKind. MusicBrainz + Discogs serve track credits with roleCategory grouping.
 
 ## Requirements
 
@@ -43,8 +43,9 @@ Shipped v0.4.0, Phase 6 tech debt complete. All 11 providers use HttpResult/Erro
 - v0.5.0-Phase6: ListenBrainz ARTIST_DISCOGRAPHY capability wired at priority 50
 - v0.5.0-Phase6: Discogs release/master ID storage in resolvedIdentifiers.extra
 
+- v0.5.0-Phase7: CREDITS enrichment type with MusicBrainz (priority 100, recording artist-rels + work-rels) and Discogs (priority 50, release extraartists) with roleCategory grouping
+
 ### Active
-- [ ] CREDITS enrichment type (MusicBrainz + Discogs)
 - [ ] RELEASE_EDITIONS enrichment type (MusicBrainz + Discogs)
 - [ ] ARTIST_TIMELINE composite enrichment type
 - [ ] Genre enhancement with multi-provider merging and GenreTag
@@ -101,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-22 after Phase 6 completion*
+*Last updated: 2026-03-22 after Phase 7 completion*
