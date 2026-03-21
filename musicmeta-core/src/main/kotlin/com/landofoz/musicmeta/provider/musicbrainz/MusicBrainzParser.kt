@@ -38,15 +38,17 @@ object MusicBrainzParser {
         return parseArtistObject(json, defaultScore = 100)
     }
 
-    private fun parseReleaseObject(obj: JSONObject, defaultScore: Int = 0): MusicBrainzRelease =
-        MusicBrainzRelease(
+    private fun parseReleaseObject(obj: JSONObject, defaultScore: Int = 0): MusicBrainzRelease {
+        val tagCounts = extractReleaseTagCounts(obj)
+        return MusicBrainzRelease(
             id = obj.getString("id"),
             title = obj.getString("title"),
             artistCredit = extractArtistCredit(obj),
             date = obj.optString("date").takeIf { it.isNotBlank() },
             country = obj.optString("country").takeIf { it.isNotBlank() },
             barcode = obj.optString("barcode").takeIf { it.isNotBlank() },
-            tags = extractReleaseTags(obj),
+            tags = tagCounts.map { it.first },
+            tagCounts = tagCounts,
             label = extractLabel(obj),
             releaseType = extractReleaseType(obj),
             releaseGroupId = extractReleaseGroupId(obj),
@@ -55,9 +57,11 @@ object MusicBrainzParser {
             hasFrontCover = extractHasFrontCover(obj),
             tracks = parseMedia(obj),
         )
+    }
 
     private fun parseArtistObject(obj: JSONObject, defaultScore: Int = 0): MusicBrainzArtist {
         val lifeSpan = obj.optJSONObject("life-span")
+        val tagCounts = extractTagsWithCounts(obj)
         return MusicBrainzArtist(
             id = obj.getString("id"),
             name = obj.getString("name"),
@@ -65,7 +69,8 @@ object MusicBrainzParser {
             country = obj.optString("country").takeIf { it.isNotBlank() },
             beginDate = lifeSpan?.optString("begin")?.takeIf { it.isNotBlank() },
             endDate = lifeSpan?.optString("end")?.takeIf { it.isNotBlank() },
-            tags = extractTags(obj),
+            tags = tagCounts.map { it.first },
+            tagCounts = tagCounts,
             disambiguation = obj.optString("disambiguation").takeIf { it.isNotBlank() },
             wikidataId = extractWikidataId(obj),
             wikipediaTitle = extractWikipediaTitle(obj),
@@ -75,14 +80,17 @@ object MusicBrainzParser {
         )
     }
 
-    private fun parseRecordingObject(obj: JSONObject): MusicBrainzRecording =
-        MusicBrainzRecording(
+    private fun parseRecordingObject(obj: JSONObject): MusicBrainzRecording {
+        val tagCounts = extractTagsWithCounts(obj)
+        return MusicBrainzRecording(
             id = obj.getString("id"),
             title = obj.getString("title"),
             isrcs = extractIsrcs(obj),
-            tags = extractTags(obj),
+            tags = tagCounts.map { it.first },
+            tagCounts = tagCounts,
             score = obj.optInt("score", 0),
         )
+    }
 
     /** Parse band members from artist-rels in an artist lookup response. */
     fun parseBandMembers(json: JSONObject): List<MusicBrainzBandMember> {
@@ -281,23 +289,33 @@ object MusicBrainzParser {
     }
 
     /**
+     * Extract tags with counts, falling back to release-group tags.
+     * Tags are primarily on release-groups in MusicBrainz.
+     */
+    internal fun extractReleaseTagCounts(release: JSONObject): List<Pair<String, Int>> {
+        val releaseTags = extractTagsWithCounts(release)
+        if (releaseTags.isNotEmpty()) return releaseTags
+        val releaseGroup = release.optJSONObject("release-group") ?: return emptyList()
+        return extractTagsWithCounts(releaseGroup)
+    }
+
+    /**
      * Extract tags, falling back to release-group tags.
      * Tags are primarily on release-groups in MusicBrainz.
      */
-    internal fun extractReleaseTags(release: JSONObject): List<String> {
-        val releaseTags = extractTags(release)
-        if (releaseTags.isNotEmpty()) return releaseTags
-        val releaseGroup = release.optJSONObject("release-group") ?: return emptyList()
-        return extractTags(releaseGroup)
-    }
+    internal fun extractReleaseTags(release: JSONObject): List<String> =
+        extractReleaseTagCounts(release).map { it.first }
 
-    internal fun extractTags(obj: JSONObject): List<String> {
+    internal fun extractTagsWithCounts(obj: JSONObject): List<Pair<String, Int>> {
         val tags = obj.optJSONArray("tags") ?: return emptyList()
         return (0 until tags.length())
             .map { i -> tags.getJSONObject(i) }
             .sortedByDescending { it.optInt("count", 0) }
-            .map { it.getString("name") }
+            .map { it.getString("name") to it.optInt("count", 0) }
     }
+
+    internal fun extractTags(obj: JSONObject): List<String> =
+        extractTagsWithCounts(obj).map { it.first }
 
     private fun extractLabel(release: JSONObject): String? {
         val labelInfo = release.optJSONArray("label-info") ?: return null

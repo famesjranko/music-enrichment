@@ -6,6 +6,7 @@ import com.landofoz.musicmeta.DiscographyAlbum
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.ExternalLink
+import com.landofoz.musicmeta.GenreTag
 import com.landofoz.musicmeta.ReleaseEdition
 import com.landofoz.musicmeta.TrackInfo
 
@@ -15,6 +16,7 @@ object MusicBrainzMapper {
     fun toAlbumMetadata(release: MusicBrainzRelease): EnrichmentData.Metadata =
         EnrichmentData.Metadata(
             genres = release.tags.takeIf { it.isNotEmpty() },
+            genreTags = buildGenreTags(release.tagCounts),
             label = release.label,
             releaseDate = release.date,
             releaseType = release.releaseType,
@@ -32,6 +34,7 @@ object MusicBrainzMapper {
     fun toArtistMetadata(artist: MusicBrainzArtist): EnrichmentData.Metadata =
         EnrichmentData.Metadata(
             genres = artist.tags.takeIf { it.isNotEmpty() },
+            genreTags = buildGenreTags(artist.tagCounts),
             country = artist.country,
             disambiguation = artist.disambiguation,
             artistType = artist.type,
@@ -49,6 +52,7 @@ object MusicBrainzMapper {
     fun toTrackMetadata(recording: MusicBrainzRecording): EnrichmentData.Metadata =
         EnrichmentData.Metadata(
             genres = recording.tags.takeIf { it.isNotEmpty() },
+            genreTags = buildGenreTags(recording.tagCounts),
             isrc = recording.isrcs.firstOrNull(),
         )
 
@@ -134,4 +138,9 @@ object MusicBrainzMapper {
         val end = if (member.ended) (member.endDate ?: "?") else "present"
         return "$begin-$end"
     }
+
+    private fun buildGenreTags(tagCounts: List<Pair<String, Int>>): List<GenreTag>? =
+        tagCounts.map { (name, _) ->
+            GenreTag(name = name, confidence = 0.4f, sources = listOf("musicbrainz"))
+        }.takeIf { it.isNotEmpty() }
 }

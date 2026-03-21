@@ -2,6 +2,7 @@ package com.landofoz.musicmeta.provider.lastfm
 
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
+import com.landofoz.musicmeta.GenreTag
 import com.landofoz.musicmeta.SimilarArtist
 import com.landofoz.musicmeta.SimilarTrack
 
@@ -36,7 +37,12 @@ object LastFmMapper {
         )
 
     fun toGenre(tags: List<String>): EnrichmentData.Metadata =
-        EnrichmentData.Metadata(genres = tags)
+        EnrichmentData.Metadata(
+            genres = tags,
+            genreTags = tags.map { tag ->
+                GenreTag(name = tag, confidence = 0.3f, sources = listOf("lastfm"))
+            }.takeIf { it.isNotEmpty() },
+        )
 
     fun toBiography(bio: String): EnrichmentData.Biography =
         EnrichmentData.Biography(text = bio, source = "Last.fm")
