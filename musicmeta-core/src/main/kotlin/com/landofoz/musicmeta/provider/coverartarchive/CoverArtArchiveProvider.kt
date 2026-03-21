@@ -33,6 +33,16 @@ class CoverArtArchiveProvider(
             priority = 100,
             identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
         ),
+        ProviderCapability(
+            type = EnrichmentType.ALBUM_ART_BACK,
+            priority = 100,
+            identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
+        ),
+        ProviderCapability(
+            type = EnrichmentType.ALBUM_BOOKLET,
+            priority = 100,
+            identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
+        ),
     )
 
     override suspend fun enrich(
@@ -47,7 +57,12 @@ class CoverArtArchiveProvider(
                 return EnrichmentResult.NotFound(type, id)
             }
 
-            findArtwork(releaseId, groupId, type)
+            when (type) {
+                EnrichmentType.ALBUM_ART -> findArtwork(releaseId, groupId, type)
+                EnrichmentType.ALBUM_ART_BACK -> findImageByType(releaseId, type, "Back")
+                EnrichmentType.ALBUM_BOOKLET -> findImageByType(releaseId, type, "Booklet")
+                else -> EnrichmentResult.NotFound(type, id)
+            }
         } catch (e: Exception) {
             EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
         }
@@ -88,6 +103,25 @@ class CoverArtArchiveProvider(
         }
 
         return EnrichmentResult.NotFound(type, id)
+    }
+
+    /** Find an image by its CAA type (e.g., "Back", "Booklet") from metadata. */
+    private suspend fun findImageByType(
+        releaseId: String?,
+        type: EnrichmentType,
+        imageType: String,
+    ): EnrichmentResult {
+        if (releaseId == null) return EnrichmentResult.NotFound(type, id)
+        val metadata = api.getArtworkMetadata(releaseId)
+            ?: return EnrichmentResult.NotFound(type, id)
+        val image = metadata.images.firstOrNull { imageType in it.types }
+            ?: return EnrichmentResult.NotFound(type, id)
+        return EnrichmentResult.Success(
+            type = type,
+            data = CoverArtArchiveMapper.toArtwork(image.url, image.thumbnails["small"], image),
+            provider = id,
+            confidence = 1.0f,
+        )
     }
 
     /** Fetch image metadata for sizes. Returns the first front image, or null. */

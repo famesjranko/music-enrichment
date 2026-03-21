@@ -8,6 +8,7 @@ import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
+import com.landofoz.musicmeta.ArtworkSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -238,6 +239,161 @@ class CoverArtArchiveProviderTest {
         assertTrue(artwork.sizes!!.size >= 2)
         assertTrue(artwork.sizes!!.any { it.label == "250" })
         assertTrue(artwork.sizes!!.any { it.label == "1200" })
+    }
+
+    // --- ALBUM_ART_BACK tests ---
+
+    @Test
+    fun `enrich returns back cover artwork when CAA has Back image`() = runTest {
+        // Given -- CAA metadata has a Back image
+        httpClient.givenJsonResponse(
+            "release/back-rel",
+            """{
+                "images": [
+                    {"front": true, "types": ["Front"], "image": "https://archive.org/img/front.jpg", "thumbnails": {"small": "https://archive.org/img/front-250.jpg", "large": "https://archive.org/img/front-500.jpg"}},
+                    {"front": false, "types": ["Back"], "image": "https://archive.org/img/back.jpg", "thumbnails": {"small": "https://archive.org/img/back-250.jpg", "large": "https://archive.org/img/back-500.jpg"}}
+                ]
+            }""",
+        )
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "back-rel"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for back cover art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART_BACK)
+
+        // Then -- returns Success with back cover artwork
+        assertTrue("Expected Success but got $result", result is EnrichmentResult.Success)
+        val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertEquals("https://archive.org/img/back.jpg", artwork.url)
+        assertEquals("https://archive.org/img/back-250.jpg", artwork.thumbnailUrl)
+        assertEquals(1.0f, result.confidence, 0.01f)
+    }
+
+    @Test
+    fun `enrich returns NotFound for ALBUM_ART_BACK when no back image exists`() = runTest {
+        // Given -- CAA metadata has only a Front image, no Back
+        httpClient.givenJsonResponse(
+            "release/front-only",
+            """{
+                "images": [
+                    {"front": true, "types": ["Front"], "image": "https://archive.org/img/front.jpg", "thumbnails": {"small": "https://archive.org/img/front-250.jpg"}}
+                ]
+            }""",
+        )
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "front-only"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for back cover art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART_BACK)
+
+        // Then -- NotFound because no Back image
+        assertTrue("Expected NotFound but got $result", result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich returns back cover artwork with sizes from thumbnails`() = runTest {
+        // Given -- CAA metadata has a Back image with multiple thumbnail sizes
+        httpClient.givenJsonResponse(
+            "release/back-sizes",
+            """{
+                "images": [
+                    {"front": false, "types": ["Back"], "image": "https://archive.org/img/back.jpg", "thumbnails": {"small": "https://archive.org/img/back-250.jpg", "large": "https://archive.org/img/back-500.jpg", "1200": "https://archive.org/img/back-1200.jpg"}}
+                ]
+            }""",
+        )
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "back-sizes"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for back cover art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART_BACK)
+
+        // Then -- artwork includes sizes from thumbnails
+        assertTrue(result is EnrichmentResult.Success)
+        val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertNotNull(artwork.sizes)
+        assertTrue(artwork.sizes!!.size >= 2)
+        assertTrue(artwork.sizes!!.any { it.label == "small" })
+        assertTrue(artwork.sizes!!.any { it.label == "large" })
+    }
+
+    @Test
+    fun `enrich returns NotFound for ALBUM_ART_BACK when no release ID`() = runTest {
+        // Given -- request has no release MBID
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzReleaseGroupId = "group1"),
+            title = "Test",
+            artist = "Test",
+        )
+
+        // When -- enriching for back cover art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART_BACK)
+
+        // Then -- NotFound because back/booklet require release ID
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    // --- ALBUM_BOOKLET tests ---
+
+    @Test
+    fun `enrich returns booklet artwork when CAA has Booklet image`() = runTest {
+        // Given -- CAA metadata has a Booklet image
+        httpClient.givenJsonResponse(
+            "release/booklet-rel",
+            """{
+                "images": [
+                    {"front": true, "types": ["Front"], "image": "https://archive.org/img/front.jpg", "thumbnails": {"small": "https://archive.org/img/front-250.jpg"}},
+                    {"front": false, "types": ["Booklet"], "image": "https://archive.org/img/booklet.jpg", "thumbnails": {"small": "https://archive.org/img/booklet-250.jpg", "large": "https://archive.org/img/booklet-500.jpg"}}
+                ]
+            }""",
+        )
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "booklet-rel"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for booklet art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_BOOKLET)
+
+        // Then -- returns Success with booklet artwork
+        assertTrue("Expected Success but got $result", result is EnrichmentResult.Success)
+        val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertEquals("https://archive.org/img/booklet.jpg", artwork.url)
+        assertEquals("https://archive.org/img/booklet-250.jpg", artwork.thumbnailUrl)
+    }
+
+    @Test
+    fun `enrich returns NotFound for ALBUM_BOOKLET when no booklet image exists`() = runTest {
+        // Given -- CAA metadata has only Front and Back, no Booklet
+        httpClient.givenJsonResponse(
+            "release/no-booklet",
+            """{
+                "images": [
+                    {"front": true, "types": ["Front"], "image": "https://archive.org/img/front.jpg", "thumbnails": {}},
+                    {"front": false, "types": ["Back"], "image": "https://archive.org/img/back.jpg", "thumbnails": {}}
+                ]
+            }""",
+        )
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "no-booklet"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for booklet art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_BOOKLET)
+
+        // Then -- NotFound because no Booklet image
+        assertTrue("Expected NotFound but got $result", result is EnrichmentResult.NotFound)
     }
 
     @Test
