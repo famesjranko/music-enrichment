@@ -461,6 +461,105 @@ class DiscogsProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    // RELEASE_EDITIONS capability tests
+
+    @Test
+    fun `provider has RELEASE_EDITIONS capability at priority 50`() {
+        // When
+        val capability = provider.capabilities.find { it.type == EnrichmentType.RELEASE_EDITIONS }
+
+        // Then
+        assertNotNull(capability)
+        assertEquals(50, capability!!.priority)
+    }
+
+    @Test
+    fun `enrich RELEASE_EDITIONS returns Success when discogsMasterId is present and has versions`() = runTest {
+        // Given — ForAlbum with discogsMasterId, master has versions
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsMasterId", "55002")
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = identifiers,
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+        httpClient.givenJsonResponse("masters/55002/versions", MASTER_VERSIONS_JSON)
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.RELEASE_EDITIONS)
+
+        // Then
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.ReleaseEditions
+        assertEquals(2, data.editions.size)
+        assertEquals("OK Computer", data.editions[0].title)
+        assertEquals("Vinyl, LP", data.editions[0].format)
+        assertEquals("UK", data.editions[0].country)
+        assertEquals(1997, data.editions[0].year)
+        assertEquals("Parlophone", data.editions[0].label)
+        assertEquals("NODATA 01", data.editions[0].catalogNumber)
+    }
+
+    @Test
+    fun `enrich RELEASE_EDITIONS returns NotFound when discogsMasterId is absent`() = runTest {
+        // Given — ForAlbum with no discogsMasterId in identifiers
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.RELEASE_EDITIONS)
+
+        // Then — NotFound because no discogsMasterId
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich RELEASE_EDITIONS returns NotFound when getMasterVersions returns empty list`() = runTest {
+        // Given — ForAlbum with discogsMasterId, but master has no versions
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsMasterId", "55002")
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = identifiers,
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+        httpClient.givenJsonResponse("masters/55002/versions", """{"versions":[]}""")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.RELEASE_EDITIONS)
+
+        // Then — NotFound because versions list is empty
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich RELEASE_EDITIONS returns Error with NETWORK ErrorKind on IOException`() = runTest {
+        // Given — IOException thrown for masters endpoint
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsMasterId", "55002")
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = identifiers,
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+        httpClient.givenIoException("masters/")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.RELEASE_EDITIONS)
+
+        // Then — Error with NETWORK kind
+        assertTrue(result is EnrichmentResult.Error)
+        assertEquals(ErrorKind.NETWORK, (result as EnrichmentResult.Error).errorKind)
+    }
+
+    @Test
+    fun `enrich RELEASE_EDITIONS returns NotFound for non-ForAlbum request`() = runTest {
+        // Given — ForTrack request instead of ForAlbum
+        val request = EnrichmentRequest.forTrack(title = "Paranoid Android", artist = "Radiohead")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.RELEASE_EDITIONS)
+
+        // Then — NotFound because RELEASE_EDITIONS only handles ForAlbum
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
         val METADATA_SEARCH_JSON = """
             {
@@ -566,6 +665,31 @@ class DiscogsProviderTest {
               "title": "OK Computer",
               "extraartists": [],
               "tracklist": []
+            }
+        """.trimIndent()
+
+        val MASTER_VERSIONS_JSON = """
+            {
+              "versions": [
+                {
+                  "id": 99001,
+                  "title": "OK Computer",
+                  "format": "Vinyl, LP",
+                  "label": "Parlophone",
+                  "country": "UK",
+                  "year": 1997,
+                  "catno": "NODATA 01"
+                },
+                {
+                  "id": 99002,
+                  "title": "OK Computer",
+                  "format": "CD",
+                  "label": "Capitol",
+                  "country": "US",
+                  "year": 1997,
+                  "catno": "7243 8 55229 2 4"
+                }
+              ]
             }
         """.trimIndent()
     }

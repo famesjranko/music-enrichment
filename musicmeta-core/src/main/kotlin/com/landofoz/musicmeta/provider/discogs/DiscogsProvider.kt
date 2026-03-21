@@ -41,6 +41,7 @@ class DiscogsProvider(
         ProviderCapability(EnrichmentType.BAND_MEMBERS, priority = 50),
         ProviderCapability(EnrichmentType.ALBUM_METADATA, priority = 40),
         ProviderCapability(EnrichmentType.CREDITS, priority = 50),
+        ProviderCapability(EnrichmentType.RELEASE_EDITIONS, priority = 50),
     )
 
     override suspend fun enrich(
@@ -60,6 +61,16 @@ class DiscogsProvider(
                 ?: return EnrichmentResult.NotFound(type, id)
             return try {
                 enrichTrackCredits(trackRequest, type)
+            } catch (e: Exception) {
+                mapError(type, e)
+            }
+        }
+
+        if (type == EnrichmentType.RELEASE_EDITIONS) {
+            val albumRequest = request as? EnrichmentRequest.ForAlbum
+                ?: return EnrichmentResult.NotFound(type, id)
+            return try {
+                enrichAlbumEditions(albumRequest, type)
             } catch (e: Exception) {
                 mapError(type, e)
             }
@@ -106,6 +117,24 @@ class DiscogsProvider(
         return EnrichmentResult.Success(
             type = type,
             data = DiscogsMapper.toCredits(credits),
+            provider = id,
+            confidence = ConfidenceCalculator.fuzzyMatch(hasArtistMatch = false),
+        )
+    }
+
+    private suspend fun enrichAlbumEditions(
+        request: EnrichmentRequest.ForAlbum,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        val masterIdStr = request.identifiers.get("discogsMasterId")
+            ?: return EnrichmentResult.NotFound(type, id)
+        val masterId = masterIdStr.toLongOrNull()
+            ?: return EnrichmentResult.NotFound(type, id)
+        val versions = api.getMasterVersions(masterId)
+        if (versions.isEmpty()) return EnrichmentResult.NotFound(type, id)
+        return EnrichmentResult.Success(
+            type = type,
+            data = DiscogsMapper.toReleaseEditions(versions),
             provider = id,
             confidence = ConfidenceCalculator.fuzzyMatch(hasArtistMatch = false),
         )
