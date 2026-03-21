@@ -28,7 +28,10 @@ v0.4.0 moves from a working prototype to a well-abstracted library. Five sequent
   3. Last.fm does not advertise TRACK_POPULARITY in its capabilities; requesting it returns NotFound from that provider
   4. LRCLIB duration values are passed as float with no precision loss; a track with a non-integer duration matches correctly
   5. Wikidata claim resolution returns the preferred-rank claim when one exists, not always the first in the array
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Fix MusicBrainz empty-result misclassification, Last.fm HTTPS, Last.fm TRACK_POPULARITY removal
+- [ ] 01-02-PLAN.md — Fix LRCLIB duration truncation, Wikidata preferred-rank claim selection
 
 ### Phase 2: Provider Abstraction
 **Goal**: Provider internals are isolated behind a typed abstraction layer so that adding or changing a provider never requires touching public API types
@@ -88,7 +91,7 @@ v0.4.0 moves from a working prototype to a well-abstracted library. Five sequent
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Bug Fixes | 0/TBD | Not started | - |
+| 1. Bug Fixes | 0/2 | Not started | - |
 | 2. Provider Abstraction | 0/TBD | Not started | - |
 | 3. Public API Cleanup | 0/TBD | Not started | - |
 | 4. New Types | 0/TBD | Not started | - |
