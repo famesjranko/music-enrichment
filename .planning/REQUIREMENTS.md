@@ -9,8 +9,8 @@ Requirements for v0.5.0 milestone. Each maps to roadmap phases.
 
 ### Tech Debt
 
-- [ ] **DEBT-01**: HttpResult migration across all 11 provider API classes (27 call sites)
-- [ ] **DEBT-02**: ErrorKind adoption with proper categorization across all 11 providers
+- [x] **DEBT-01**: HttpResult migration across all 11 provider API classes (27 call sites)
+- [x] **DEBT-02**: ErrorKind adoption with proper categorization across all 11 providers
 - [ ] **DEBT-03**: ListenBrainz ARTIST_DISCOGRAPHY capability wired from existing plumbing
 - [ ] **DEBT-04**: Discogs release ID and master ID stored from search results
 
@@ -70,8 +70,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEBT-01 | Phase 6 | Pending |
-| DEBT-02 | Phase 6 | Pending |
+| DEBT-01 | Phase 6 | Complete |
+| DEBT-02 | Phase 6 | Complete |
 | DEBT-03 | Phase 6 | Pending |
 | DEBT-04 | Phase 6 | Pending |
 | CRED-01 | Phase 7 | Pending |
