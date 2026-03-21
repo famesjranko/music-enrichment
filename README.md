@@ -291,6 +291,27 @@ dependencies {
 
 Then consume as `com.landofoz:musicmeta-core:0.1.0` from `mavenLocal()`.
 
+## Running the showcase
+
+The showcase test exercises every enrichment type across diverse artists, albums, and tracks, producing a readable diagnostic report.
+
+```bash
+# Run with free providers only (8/11 active)
+./gradlew :musicmeta-core:test -Dinclude.e2e=true \
+  --tests "*.EnrichmentShowcaseTest"
+
+# Run with all providers (pass API keys)
+./gradlew :musicmeta-core:test -Dinclude.e2e=true \
+  -Dlastfm.apikey=YOUR_KEY \
+  -Dfanarttv.apikey=YOUR_KEY \
+  -Ddiscogs.token=YOUR_TOKEN \
+  --tests "*.EnrichmentShowcaseTest"
+```
+
+Or set environment variables: `LASTFM_API_KEY`, `FANARTTV_API_KEY`, `DISCOGS_TOKEN`.
+
+The report shows per-type results with provider attribution, confidence scores, and data snippets. The final test prints a coverage gap analysis and wishlist of unimplemented enrichment types.
+
 ## Requirements
 
 - **JVM**: Java 17+, Kotlin 2.1+

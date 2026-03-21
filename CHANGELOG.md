@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Enrichment showcase test (`EnrichmentShowcaseTest`) — comprehensive E2E diagnostic that exercises all 16 enrichment types across artists, albums, and tracks with formatted output showing provider coverage, gaps, and a wishlist of unimplemented features
+- API key forwarding in `build.gradle.kts` — Last.fm, Fanart.tv, and Discogs keys can be passed via system properties (`-Dlastfm.apikey=KEY`) or environment variables (`LASTFM_API_KEY`)
+
+### Fixed
+- Artist identity resolution now resolves wikidata/wikipedia URLs — MusicBrainz was skipping the full lookup during identity resolution when the requested type was GENRE/LABEL/etc., causing ARTIST_PHOTO and ARTIST_BIO to always fail for artist requests
+- E2E tests switched from `runTest` to `runBlocking` — `runTest`'s virtual time caused `withTimeout` in the engine to fire prematurely, silently returning empty results from every `enrich()` call
+- `extractResolution` in `RealApiEndToEndTest` updated to match current engine data model (engine stores `Metadata` + `resolvedIdentifiers`, not `IdentifierResolution`)
+
 ### Changed
 - Provider priorities now configurable via `EnrichmentConfig.priorityOverrides` — reorder provider chains without modifying provider code
 - MusicBrainz minimum match score now a constructor param (`minMatchScore`, default 80)

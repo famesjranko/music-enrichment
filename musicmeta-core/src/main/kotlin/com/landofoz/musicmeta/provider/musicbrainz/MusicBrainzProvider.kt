@@ -175,10 +175,9 @@ class MusicBrainzProvider(
         }
 
         // Search results have metadata (genres, country) but lack URL relations
-        // (wikidata, wikipedia). Only do the expensive lookup when the requested
-        // type actually needs those relations — saves ~1.1s per item in bulk mode.
-        val needsRelations = type in RELATION_DEPENDENT_TYPES &&
-            best.wikidataId == null && best.wikipediaTitle == null
+        // (wikidata, wikipedia). Do the full lookup when these are missing so
+        // downstream providers (Wikidata, Wikipedia) can use them.
+        val needsRelations = best.wikidataId == null && best.wikipediaTitle == null
         val resolved = if (needsRelations) {
             api.lookupArtist(best.id) ?: best
         } else {

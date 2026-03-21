@@ -15,6 +15,16 @@ java {
 tasks.withType<Test> {
     // Forward system properties to test JVM (for E2E test gating)
     systemProperty("include.e2e", System.getProperty("include.e2e") ?: "false")
+
+    // Forward API keys (system property > environment variable > empty)
+    val apiKeys = mapOf(
+        "lastfm.apikey" to "LASTFM_API_KEY",
+        "fanarttv.apikey" to "FANARTTV_API_KEY",
+        "discogs.token" to "DISCOGS_TOKEN",
+    )
+    apiKeys.forEach { (prop, env) ->
+        systemProperty(prop, System.getProperty(prop) ?: System.getenv(env) ?: "")
+    }
 }
 
 publishing {

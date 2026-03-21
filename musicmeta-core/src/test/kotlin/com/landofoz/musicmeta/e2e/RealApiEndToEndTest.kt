@@ -14,7 +14,7 @@ import com.landofoz.musicmeta.provider.lrclib.LrcLibProvider
 import com.landofoz.musicmeta.provider.musicbrainz.MusicBrainzProvider
 import com.landofoz.musicmeta.provider.wikidata.WikidataProvider
 import com.landofoz.musicmeta.provider.wikipedia.WikipediaProvider
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
@@ -54,7 +54,7 @@ class RealApiEndToEndTest {
     // --- MusicBrainz Identity Resolution ---
 
     @Test
-    fun `MusicBrainz resolves OK Computer by Radiohead`() = runTest {
+    fun `MusicBrainz resolves OK Computer by Radiohead`() = runBlocking {
         // Given — a well-known album request
         val request = EnrichmentRequest.forAlbum("OK Computer", "Radiohead")
 
@@ -72,7 +72,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `MusicBrainz resolves Radiohead artist`() = runTest {
+    fun `MusicBrainz resolves Radiohead artist`() = runBlocking {
         // Given — a well-known artist request
         val request = EnrichmentRequest.forArtist("Radiohead")
 
@@ -89,7 +89,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `MusicBrainz resolves Dark Side of the Moon by Pink Floyd`() = runTest {
+    fun `MusicBrainz resolves Dark Side of the Moon by Pink Floyd`() = runBlocking {
         // Given — another well-known album for cross-validation
         val request = EnrichmentRequest.forAlbum("The Dark Side of the Moon", "Pink Floyd")
 
@@ -107,7 +107,7 @@ class RealApiEndToEndTest {
     // --- Cover Art Archive ---
 
     @Test
-    fun `Cover Art Archive returns artwork for OK Computer`() = runTest {
+    fun `Cover Art Archive returns artwork for OK Computer`() = runBlocking {
         // Given — a well-known album with cover art in CAA
         val request = EnrichmentRequest.forAlbum("OK Computer", "Radiohead")
 
@@ -126,7 +126,7 @@ class RealApiEndToEndTest {
     // --- Wikidata Artist Photos ---
 
     @Test
-    fun `Wikidata returns artist photo for Radiohead`() = runTest {
+    fun `Wikidata returns artist photo for Radiohead`() = runBlocking {
         // Given — a well-known artist that may have a P18 image on Wikidata
         val request = EnrichmentRequest.forArtist("Radiohead")
 
@@ -147,7 +147,7 @@ class RealApiEndToEndTest {
     // --- Wikipedia Bios ---
 
     @Test
-    fun `Wikipedia returns biography for Radiohead`() = runTest {
+    fun `Wikipedia returns biography for Radiohead`() = runBlocking {
         // Given — a well-known English band with a Wikipedia article
         val request = EnrichmentRequest.forArtist("Radiohead")
 
@@ -164,7 +164,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `Wikipedia resolves bio via Wikidata sitelinks for Air`() = runTest {
+    fun `Wikipedia resolves bio via Wikidata sitelinks for Air`() = runBlocking {
         // Given — "Air" has Wikidata but no direct Wikipedia relation in MusicBrainz
         val request = EnrichmentRequest.forArtist("Air")
 
@@ -182,7 +182,7 @@ class RealApiEndToEndTest {
     // --- LRCLIB Lyrics ---
 
     @Test
-    fun `LRCLIB returns synced lyrics for Creep by Radiohead`() = runTest {
+    fun `LRCLIB returns synced lyrics for Creep by Radiohead`() = runBlocking {
         // Given — a well-known track with lyrics in LRCLIB
         val request = EnrichmentRequest.forTrack("Creep", "Radiohead", album = "Pablo Honey")
 
@@ -206,7 +206,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `LRCLIB detects instrumental track`() = runTest {
+    fun `LRCLIB detects instrumental track`() = runBlocking {
         // Given — "Treefingers" by Radiohead is an instrumental track
         val request = EnrichmentRequest.forTrack("Treefingers", "Radiohead", album = "Kid A")
 
@@ -231,7 +231,7 @@ class RealApiEndToEndTest {
     // --- Deezer Fallback ---
 
     @Test
-    fun `Deezer returns album art as fallback`() = runTest {
+    fun `Deezer returns album art as fallback`() = runBlocking {
         // Given — engine with only Deezer (no MusicBrainz/CAA) to isolate fallback
         val httpClient = DefaultHttpClient(USER_AGENT)
         val deezerOnly = EnrichmentEngine.Builder()
@@ -253,7 +253,7 @@ class RealApiEndToEndTest {
     // --- iTunes Fallback ---
 
     @Test
-    fun `iTunes returns album art as fallback`() = runTest {
+    fun `iTunes returns album art as fallback`() = runBlocking {
         // Given — engine with only iTunes to isolate fallback
         val httpClient = DefaultHttpClient(USER_AGENT)
         val itunesOnly = EnrichmentEngine.Builder()
@@ -275,7 +275,7 @@ class RealApiEndToEndTest {
     // --- Full Pipeline ---
 
     @Test
-    fun `full album enrichment pipeline for OK Computer`() = runTest {
+    fun `full album enrichment pipeline for OK Computer`() = runBlocking {
         // Given — all enrichment types requested for a well-known album
         val request = EnrichmentRequest.forAlbum("OK Computer", "Radiohead")
         val types = setOf(
@@ -316,7 +316,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `full artist enrichment pipeline for Pink Floyd`() = runTest {
+    fun `full artist enrichment pipeline for Pink Floyd`() = runBlocking {
         // Given — artist enrichment requesting photo, bio, and genre
         val request = EnrichmentRequest.forArtist("Pink Floyd")
         val types = setOf(EnrichmentType.ARTIST_PHOTO, EnrichmentType.ARTIST_BIO, EnrichmentType.GENRE)
@@ -345,7 +345,7 @@ class RealApiEndToEndTest {
     // --- Search ---
 
     @Test
-    fun `search returns multiple album candidates`() = runTest {
+    fun `search returns multiple album candidates`() = runBlocking {
         // Given — a partial album name to test fuzzy matching
         val request = EnrichmentRequest.forAlbum("Dark Side", "Pink Floyd")
 
@@ -361,7 +361,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `search returns multiple artist candidates`() = runTest {
+    fun `search returns multiple artist candidates`() = runBlocking {
         // Given — a common artist name with multiple matches (band vs. solo vs. tribute)
         val request = EnrichmentRequest.forArtist("Air")
 
@@ -379,7 +379,7 @@ class RealApiEndToEndTest {
     // --- Edge Cases ---
 
     @Test
-    fun `handles obscure album gracefully`() = runTest {
+    fun `handles obscure album gracefully`() = runBlocking {
         // Given — a completely nonexistent album/artist combination
         val request = EnrichmentRequest.forAlbum("zxqwvnmkjhgf", "NonexistentArtist12345")
 
@@ -398,7 +398,7 @@ class RealApiEndToEndTest {
     }
 
     @Test
-    fun `handles special characters in search`() = runTest {
+    fun `handles special characters in search`() = runBlocking {
         // Given — "AC/DC" has a slash that needs Lucene escaping
         val request = EnrichmentRequest.forArtist("AC/DC")
 
@@ -413,10 +413,23 @@ class RealApiEndToEndTest {
 
     private fun extractResolution(
         result: Map<EnrichmentType, EnrichmentResult>,
-    ): EnrichmentData.IdentifierResolution? =
-        result.values.filterIsInstance<EnrichmentResult.Success>()
-            .mapNotNull { it.data as? EnrichmentData.IdentifierResolution }
-            .firstOrNull()
+    ): EnrichmentData.IdentifierResolution? {
+        // The engine stores Metadata (not IdentifierResolution) in results,
+        // with resolved identifiers attached to the Success wrapper.
+        val success = result.values
+            .filterIsInstance<EnrichmentResult.Success>()
+            .firstOrNull { it.resolvedIdentifiers != null } ?: return null
+        val ids = success.resolvedIdentifiers ?: return null
+        val metadata = success.data as? EnrichmentData.Metadata
+        return EnrichmentData.IdentifierResolution(
+            musicBrainzId = ids.musicBrainzId,
+            musicBrainzReleaseGroupId = ids.musicBrainzReleaseGroupId,
+            wikidataId = ids.wikidataId,
+            wikipediaTitle = ids.wikipediaTitle,
+            score = (success.confidence * 100).toInt(),
+            metadata = metadata,
+        )
+    }
 
     companion object {
         private const val USER_AGENT =
