@@ -40,6 +40,50 @@ class DefaultHttpClient(
         } catch (_: IOException) { null }
     }
 
+    override suspend fun fetchJsonResult(url: String): HttpResult<JSONObject> =
+        withContext(Dispatchers.IO) {
+            try {
+                val conn = openConnection(url).apply { connect() }
+                try {
+                    val code = conn.responseCode
+                    when {
+                        code == 429 -> {
+                            val retryMs = conn.getHeaderField("Retry-After")
+                                ?.toLongOrNull()?.let { it * 1000 }
+                            HttpResult.RateLimited(retryMs)
+                        }
+                        code in 400..499 -> {
+                            val body = readErrorBody(conn)
+                            HttpResult.ClientError(code, body)
+                        }
+                        code in 500..599 -> {
+                            val body = readErrorBody(conn)
+                            HttpResult.ServerError(code, body)
+                        }
+                        code in 200..299 -> {
+                            val text = conn.responseStream().bufferedReader()
+                                .use { it.readText() }
+                            try {
+                                HttpResult.Ok(JSONObject(text), code)
+                            } catch (e: JSONException) {
+                                HttpResult.NetworkError(
+                                    "JSON parse error: ${e.message}", e,
+                                )
+                            }
+                        }
+                        else -> HttpResult.ClientError(code)
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            } catch (e: IOException) {
+                HttpResult.NetworkError(e.message ?: "Network error", e)
+            }
+        }
+
+    private fun readErrorBody(conn: HttpURLConnection): String? =
+        try { conn.errorStream?.bufferedReader()?.use { it.readText() } } catch (_: IOException) { null }
+
     private suspend fun get(url: String): String? {
         repeat(maxRetries) { attempt ->
             try {

@@ -21,4 +21,11 @@ interface HttpClient {
      * Returns null on error.
      */
     suspend fun fetchRedirectUrl(url: String): String?
+
+    /**
+     * GET request returning typed [HttpResult] with parsed JSON body.
+     * Unlike [fetchJson] which returns null on any failure, this preserves
+     * the specific HTTP status for precise error handling.
+     */
+    suspend fun fetchJsonResult(url: String): HttpResult<JSONObject>
 }
