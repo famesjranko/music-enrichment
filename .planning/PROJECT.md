@@ -22,7 +22,7 @@ Consumers get comprehensive, accurate music metadata from a single `enrich()` ca
 
 ## Current State
 
-Phase 8 complete. 27 enrichment types (CREDITS, RELEASE_EDITIONS added). MusicBrainz + Discogs serve credits and editions.
+Phase 9 complete. 28 enrichment types. ARTIST_TIMELINE introduced composite enrichment concept to engine.
 
 ## Requirements
 
@@ -47,8 +47,9 @@ Phase 8 complete. 27 enrichment types (CREDITS, RELEASE_EDITIONS added). MusicBr
 
 - v0.5.0-Phase8: RELEASE_EDITIONS enrichment type with MusicBrainz (priority 100, release-group releases) and Discogs (priority 50, master versions)
 
+- v0.5.0-Phase9: ARTIST_TIMELINE composite enrichment type with TimelineSynthesizer and automatic sub-type resolution in DefaultEnrichmentEngine
+
 ### Active
-- [ ] ARTIST_TIMELINE composite enrichment type
 - [ ] Genre enhancement with multi-provider merging and GenreTag
 - [ ] Provider coverage expansion (Last.fm, iTunes, Fanart.tv, ListenBrainz endpoints)
 
@@ -103,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-22 after Phase 8 completion*
+*Last updated: 2026-03-22 after Phase 9 completion*
