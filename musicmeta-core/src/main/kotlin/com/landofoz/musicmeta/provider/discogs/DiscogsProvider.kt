@@ -40,6 +40,7 @@ class DiscogsProvider(
         ProviderCapability(EnrichmentType.RELEASE_TYPE, priority = 50),
         ProviderCapability(EnrichmentType.BAND_MEMBERS, priority = 50),
         ProviderCapability(EnrichmentType.ALBUM_METADATA, priority = 40),
+        ProviderCapability(EnrichmentType.CREDITS, priority = 50),
     )
 
     override suspend fun enrich(
@@ -52,6 +53,16 @@ class DiscogsProvider(
             val artistRequest = request as? EnrichmentRequest.ForArtist
                 ?: return EnrichmentResult.NotFound(type, id)
             return enrichBandMembers(artistRequest, type)
+        }
+
+        if (type == EnrichmentType.CREDITS) {
+            val trackRequest = request as? EnrichmentRequest.ForTrack
+                ?: return EnrichmentResult.NotFound(type, id)
+            return try {
+                enrichTrackCredits(trackRequest, type)
+            } catch (e: Exception) {
+                mapError(type, e)
+            }
         }
 
         val albumRequest = request as? EnrichmentRequest.ForAlbum
@@ -69,6 +80,35 @@ class DiscogsProvider(
         } catch (e: Exception) {
             mapError(type, e)
         }
+    }
+
+    private suspend fun enrichTrackCredits(
+        request: EnrichmentRequest.ForTrack,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        val releaseIdStr = request.identifiers.get("discogsReleaseId")
+            ?: return EnrichmentResult.NotFound(type, id)
+        val releaseId = releaseIdStr.toLongOrNull()
+            ?: return EnrichmentResult.NotFound(type, id)
+        val detail = api.getReleaseDetails(releaseId)
+            ?: return EnrichmentResult.NotFound(type, id)
+
+        // First try track-level extraartists (filtered by matching title)
+        val trackCredits = detail.tracklist
+            .firstOrNull { it.title.equals(request.title, ignoreCase = true) }
+            ?.extraartists
+            .orEmpty()
+
+        // Fall back to release-level extraartists if no track-specific credits
+        val credits = trackCredits.ifEmpty { detail.extraartists }
+        if (credits.isEmpty()) return EnrichmentResult.NotFound(type, id)
+
+        return EnrichmentResult.Success(
+            type = type,
+            data = DiscogsMapper.toCredits(credits),
+            provider = id,
+            confidence = ConfidenceCalculator.fuzzyMatch(hasArtistMatch = false),
+        )
     }
 
     private fun mapError(type: EnrichmentType, e: Exception): EnrichmentResult.Error {

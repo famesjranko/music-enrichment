@@ -1,10 +1,12 @@
 package com.landofoz.musicmeta.provider.discogs
 
 import com.landofoz.musicmeta.EnrichmentData
+import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.ErrorKind
+import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
@@ -352,6 +354,113 @@ class DiscogsProviderTest {
         assertNull(success.resolvedIdentifiers)
     }
 
+    // CREDITS capability tests
+
+    @Test
+    fun `provider has CREDITS capability at priority 50`() {
+        // When
+        val capability = provider.capabilities.find { it.type == EnrichmentType.CREDITS }
+
+        // Then
+        assertNotNull(capability)
+        assertEquals(50, capability!!.priority)
+    }
+
+    @Test
+    fun `enrich CREDITS returns track-level credits when track title matches`() = runTest {
+        // Given — ForTrack with discogsReleaseId, release has track-specific extraartists
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsReleaseId", "999")
+        val request = EnrichmentRequest.ForTrack(
+            identifiers = identifiers,
+            title = "Paranoid Android",
+            artist = "Radiohead",
+        )
+        httpClient.givenJsonResponse("releases/999", RELEASE_DETAIL_WITH_TRACK_CREDITS_JSON)
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then — success with track-level credit (Jane Doe, Vocals)
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Credits
+        assertEquals(1, data.credits.size)
+        assertEquals("Jane Doe", data.credits[0].name)
+        assertEquals("Vocals", data.credits[0].role)
+        assertEquals("performance", data.credits[0].roleCategory)
+    }
+
+    @Test
+    fun `enrich CREDITS falls back to release-level credits when no track match`() = runTest {
+        // Given — ForTrack title does not match any track in the release
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsReleaseId", "999")
+        val request = EnrichmentRequest.ForTrack(
+            identifiers = identifiers,
+            title = "Unknown Track",
+            artist = "Radiohead",
+        )
+        httpClient.givenJsonResponse("releases/999", RELEASE_DETAIL_NO_TRACK_MATCH_JSON)
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then — success with release-level credit (John Smith, Mixed By)
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Credits
+        assertEquals(1, data.credits.size)
+        assertEquals("John Smith", data.credits[0].name)
+        assertEquals("Mixed By", data.credits[0].role)
+        assertEquals("production", data.credits[0].roleCategory)
+    }
+
+    @Test
+    fun `enrich CREDITS returns NotFound when no discogsReleaseId in identifiers`() = runTest {
+        // Given — ForTrack with no extra identifiers
+        val request = EnrichmentRequest.forTrack(title = "Paranoid Android", artist = "Radiohead")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then — NotFound because no discogsReleaseId
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich CREDITS returns Error with NETWORK ErrorKind when IOException thrown`() = runTest {
+        // Given — IOException thrown for releases endpoint
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsReleaseId", "999")
+        val request = EnrichmentRequest.ForTrack(
+            identifiers = identifiers,
+            title = "Paranoid Android",
+            artist = "Radiohead",
+        )
+        httpClient.givenIoException("releases/")
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then — Error with NETWORK kind
+        assertTrue(result is EnrichmentResult.Error)
+        assertEquals(ErrorKind.NETWORK, (result as EnrichmentResult.Error).errorKind)
+    }
+
+    @Test
+    fun `enrich CREDITS returns NotFound when release has no credits`() = runTest {
+        // Given — release with empty extraartists and tracklist
+        val identifiers = EnrichmentIdentifiers().withExtra("discogsReleaseId", "999")
+        val request = EnrichmentRequest.ForTrack(
+            identifiers = identifiers,
+            title = "Paranoid Android",
+            artist = "Radiohead",
+        )
+        httpClient.givenJsonResponse("releases/999", RELEASE_DETAIL_NO_CREDITS_JSON)
+
+        // When
+        val result = provider.enrich(request, EnrichmentType.CREDITS)
+
+        // Then — NotFound because credits list is empty
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
         val METADATA_SEARCH_JSON = """
             {
@@ -407,6 +516,56 @@ class DiscogsProviderTest {
         val EMPTY_RESULTS_JSON = """
             {
               "results": []
+            }
+        """.trimIndent()
+
+        val RELEASE_DETAIL_WITH_TRACK_CREDITS_JSON = """
+            {
+              "id": 999,
+              "title": "OK Computer",
+              "extraartists": [
+                {"name": "John Smith", "role": "Producer", "id": 12345}
+              ],
+              "tracklist": [
+                {
+                  "title": "Paranoid Android",
+                  "position": "1",
+                  "extraartists": [
+                    {"name": "Jane Doe", "role": "Vocals", "id": 67890}
+                  ]
+                },
+                {
+                  "title": "Subterranean Homesick Alien",
+                  "position": "2",
+                  "extraartists": []
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val RELEASE_DETAIL_NO_TRACK_MATCH_JSON = """
+            {
+              "id": 999,
+              "title": "OK Computer",
+              "extraartists": [
+                {"name": "John Smith", "role": "Mixed By", "id": 12345}
+              ],
+              "tracklist": [
+                {
+                  "title": "Airbag",
+                  "position": "1",
+                  "extraartists": []
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val RELEASE_DETAIL_NO_CREDITS_JSON = """
+            {
+              "id": 999,
+              "title": "OK Computer",
+              "extraartists": [],
+              "tracklist": []
             }
         """.trimIndent()
     }
