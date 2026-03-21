@@ -12,8 +12,8 @@ Requirements for the Provider Abstraction Overhaul milestone. Each maps to roadm
 - [x] **BUG-01**: MusicBrainz empty results return NotFound instead of RateLimited
 - [x] **BUG-02**: Last.fm API uses HTTPS instead of HTTP
 - [x] **BUG-03**: Last.fm TRACK_POPULARITY removed from capabilities until properly wired
-- [ ] **BUG-04**: LRCLIB duration passed as float (no precision loss)
-- [ ] **BUG-05**: Wikidata filters claims by rank (preferred > normal) instead of taking [0]
+- [x] **BUG-04**: LRCLIB duration passed as float (no precision loss)
+- [x] **BUG-05**: Wikidata filters claims by rank (preferred > normal) instead of taking [0]
 
 ### Provider Abstraction
 
@@ -81,8 +81,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUG-01 | Phase 1 | Complete |
 | BUG-02 | Phase 1 | Complete |
 | BUG-03 | Phase 1 | Complete |
-| BUG-04 | Phase 1 | Pending |
-| BUG-05 | Phase 1 | Pending |
+| BUG-04 | Phase 1 | Complete |
+| BUG-05 | Phase 1 | Complete |
 | ABST-01 | Phase 2 | Pending |
 | ABST-02 | Phase 2 | Pending |
 | ABST-03 | Phase 2 | Pending |

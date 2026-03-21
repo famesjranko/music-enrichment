@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: Provider Abstraction Overhaul
 status: unknown
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-21T07:24:43.842Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-21T07:25:10.194Z"
 progress:
   total_phases: 5
   completed_phases: 1
@@ -47,6 +47,7 @@ Plan: 2 of 2
 
 *Updated after each plan completion*
 | Phase 01-bug-fixes P01 | 4min | 2 tasks | 5 files |
+| Phase 01-bug-fixes P02 | 4min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -56,6 +57,8 @@ Plan: 2 of 2
 - Clean breaks over deprecation: no external consumers at pre-1.0; IdentifierResolution removal is a hard delete (pending Phase 2)
 - MusicBrainz as identity backbone: MBIDs + Wikidata/Wikipedia links enable precise downstream lookups (established)
 - [Phase 01-bug-fixes]: Null API response and empty results both map to NotFound (API layer conflates both to emptyList)
+- [Phase 01-bug-fixes]: LRCLIB duration uses Double parameter type for precise float formatting via Kotlin string interpolation
+- [Phase 01-bug-fixes]: Wikidata preferred-rank fallback uses first claim (index 0) for backward compatibility
 
 ### Pending Todos
 
@@ -67,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T07:24:43.839Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-21T07:25:10.192Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
