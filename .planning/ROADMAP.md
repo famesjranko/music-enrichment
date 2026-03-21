@@ -77,7 +77,12 @@ Plans:
   5. enrich(ForArtist("Radiohead"), setOf(ARTIST_BANNER, ARTIST_LINKS)) returns Artwork (banner) and ArtistLinks with external URLs from at least one provider each
   6. Artwork results from Cover Art Archive, Deezer, iTunes, and Fanart.tv include a populated sizes list with at least two size entries
   7. WikidataProvider returns birth/death date, country of origin, and occupation in Metadata when those Wikidata properties are present
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 04-01-PLAN.md — New EnrichmentType values, EnrichmentData subclasses, ArtworkSize, serialization tests
+- [ ] 04-02-PLAN.md — MusicBrainz: BAND_MEMBERS, ARTIST_DISCOGRAPHY, ALBUM_TRACKS, ARTIST_LINKS capabilities
+- [ ] 04-03-PLAN.md — Deezer discography/tracks, Last.fm similar tracks, Fanart.tv artist banner
+- [ ] 04-04-PLAN.md — Artwork sizes for 4 providers, Wikidata expanded properties, Discogs band members
 
 ### Phase 5: Deepening
 **Goal**: Existing enrichment types are more complete: back cover art is available, album metadata comes from more sources, track popularity works correctly, artist photos have supplemental Wikipedia coverage, ListenBrainz batch endpoints are used, and all providers report confidence scores consistently
@@ -101,5 +106,5 @@ Plans:
 | 1. Bug Fixes | 2/2 | Complete | 2026-03-21 |
 | 2. Provider Abstraction | 0/3 | Not started | - |
 | 3. Public API Cleanup | 0/2 | Not started | - |
-| 4. New Types | 0/TBD | Not started | - |
+| 4. New Types | 0/4 | Not started | - |
 | 5. Deepening | 0/TBD | Not started | - |
