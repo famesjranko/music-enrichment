@@ -52,6 +52,13 @@ object DeezerMapper {
             },
         )
 
+    fun toAlbumMetadata(result: DeezerAlbumResult): EnrichmentData.Metadata =
+        EnrichmentData.Metadata(
+            trackCount = result.nbTracks,
+            releaseType = result.recordType,
+            explicit = result.explicitLyrics,
+        )
+
     fun toSearchCandidate(
         result: DeezerAlbumResult,
         providerId: String,

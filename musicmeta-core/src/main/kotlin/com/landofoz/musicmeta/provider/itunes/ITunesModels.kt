@@ -9,4 +9,5 @@ data class ITunesAlbumResult(
     val releaseDate: String? = null,
     val primaryGenreName: String? = null,
     val country: String? = null,
+    val trackCount: Int? = null,
 )

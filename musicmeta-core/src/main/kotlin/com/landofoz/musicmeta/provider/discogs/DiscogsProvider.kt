@@ -36,6 +36,7 @@ class DiscogsProvider(
         ProviderCapability(EnrichmentType.LABEL, priority = 50),
         ProviderCapability(EnrichmentType.RELEASE_TYPE, priority = 50),
         ProviderCapability(EnrichmentType.BAND_MEMBERS, priority = 50),
+        ProviderCapability(EnrichmentType.ALBUM_METADATA, priority = 40),
     )
 
     override suspend fun enrich(
@@ -93,6 +94,7 @@ class DiscogsProvider(
             EnrichmentType.ALBUM_ART -> DiscogsMapper.toArtwork(release)
             EnrichmentType.LABEL -> DiscogsMapper.toLabelMetadata(release)
             EnrichmentType.RELEASE_TYPE -> DiscogsMapper.toReleaseTypeMetadata(release)
+            EnrichmentType.ALBUM_METADATA -> DiscogsMapper.toAlbumMetadata(release)
             else -> null
         } ?: return EnrichmentResult.NotFound(type, id)
         return success(data, type)

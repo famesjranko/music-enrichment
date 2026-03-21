@@ -22,6 +22,14 @@ object ITunesMapper {
         return EnrichmentData.Artwork(url = highResUrl, thumbnailUrl = artworkUrl, sizes = sizes)
     }
 
+    fun toAlbumMetadata(result: ITunesAlbumResult): EnrichmentData.Metadata =
+        EnrichmentData.Metadata(
+            trackCount = result.trackCount,
+            genres = listOfNotNull(result.primaryGenreName),
+            country = result.country,
+            releaseDate = result.releaseDate,
+        )
+
     fun toSearchCandidate(
         result: ITunesAlbumResult,
         providerId: String,

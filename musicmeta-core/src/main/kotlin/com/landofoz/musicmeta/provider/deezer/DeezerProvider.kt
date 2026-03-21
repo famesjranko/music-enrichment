@@ -31,6 +31,7 @@ class DeezerProvider(
         ProviderCapability(EnrichmentType.ALBUM_ART, priority = 50),
         ProviderCapability(EnrichmentType.ARTIST_DISCOGRAPHY, priority = 50),
         ProviderCapability(EnrichmentType.ALBUM_TRACKS, priority = 50),
+        ProviderCapability(EnrichmentType.ALBUM_METADATA, priority = 50),
     )
 
     override suspend fun searchCandidates(
@@ -52,6 +53,7 @@ class DeezerProvider(
             when (type) {
                 EnrichmentType.ARTIST_DISCOGRAPHY -> enrichDiscography(request)
                 EnrichmentType.ALBUM_TRACKS -> enrichAlbumTracks(request)
+                EnrichmentType.ALBUM_METADATA -> enrichAlbumMetadata(request, type)
                 else -> enrichAlbumArt(request, type)
             }
         } catch (e: Exception) {
@@ -93,6 +95,27 @@ class DeezerProvider(
         return EnrichmentResult.Success(
             type = EnrichmentType.ALBUM_TRACKS,
             data = DeezerMapper.toTracklist(tracks),
+            provider = id,
+            confidence = CONFIDENCE,
+        )
+    }
+
+    private suspend fun enrichAlbumMetadata(
+        request: EnrichmentRequest,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        if (request !is EnrichmentRequest.ForAlbum) {
+            return EnrichmentResult.NotFound(type, id)
+        }
+        val query = "${request.artist} ${request.title}"
+        val results = api.searchAlbums(query, 5)
+        val result = results.firstOrNull {
+            ArtistMatcher.isMatch(request.artist, it.artistName)
+        } ?: return EnrichmentResult.NotFound(type, id)
+
+        return EnrichmentResult.Success(
+            type = type,
+            data = DeezerMapper.toAlbumMetadata(result),
             provider = id,
             confidence = CONFIDENCE,
         )

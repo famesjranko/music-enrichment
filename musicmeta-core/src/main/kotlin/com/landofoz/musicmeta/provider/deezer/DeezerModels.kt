@@ -9,6 +9,9 @@ data class DeezerAlbumResult(
     val coverMedium: String?,
     val coverBig: String?,
     val coverXl: String?,
+    val nbTracks: Int? = null,
+    val recordType: String? = null,
+    val explicitLyrics: Boolean? = null,
 )
 
 /** Artist search result from Deezer API. */

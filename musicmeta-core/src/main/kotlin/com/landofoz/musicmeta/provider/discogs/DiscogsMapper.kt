@@ -22,6 +22,17 @@ object DiscogsMapper {
         return EnrichmentData.Metadata(releaseType = releaseType)
     }
 
+    fun toAlbumMetadata(release: DiscogsRelease): EnrichmentData.Metadata =
+        EnrichmentData.Metadata(
+            label = release.label,
+            releaseDate = release.year,
+            releaseType = release.releaseType,
+            country = release.country,
+            catalogNumber = release.catno,
+            genres = (release.genres.orEmpty() + release.styles.orEmpty())
+                .takeIf { it.isNotEmpty() },
+        )
+
     fun toBandMembers(artist: DiscogsArtist): EnrichmentData.BandMembers =
         EnrichmentData.BandMembers(
             members = artist.members.map { member ->

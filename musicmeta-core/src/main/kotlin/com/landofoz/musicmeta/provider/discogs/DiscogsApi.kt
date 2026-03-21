@@ -73,6 +73,14 @@ class DiscogsApi(
             val obj = results.getJSONObject(i)
             val labels = obj.optJSONArray("label")
             val label = if (labels != null && labels.length() > 0) labels.getString(0) else null
+            val genreArr = obj.optJSONArray("genre")
+            val genres = genreArr?.let { arr ->
+                (0 until arr.length()).map { arr.getString(it) }
+            }
+            val styleArr = obj.optJSONArray("style")
+            val styles = styleArr?.let { arr ->
+                (0 until arr.length()).map { arr.getString(it) }
+            }
             DiscogsRelease(
                 title = obj.optString("title", ""),
                 label = label,
@@ -80,6 +88,9 @@ class DiscogsApi(
                 country = obj.optString("country").takeIf { it.isNotBlank() },
                 coverImage = obj.optString("cover_image").takeIf { it.isNotBlank() },
                 releaseType = obj.optString("type").takeIf { it.isNotBlank() },
+                catno = obj.optString("catno").takeIf { it.isNotBlank() },
+                genres = genres,
+                styles = styles,
             )
         }
     }

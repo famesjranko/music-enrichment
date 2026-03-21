@@ -7,6 +7,9 @@ data class DiscogsRelease(
     val country: String?,
     val coverImage: String?,
     val releaseType: String? = null,
+    val catno: String? = null,
+    val genres: List<String>? = null,
+    val styles: List<String>? = null,
 )
 
 data class DiscogsArtist(

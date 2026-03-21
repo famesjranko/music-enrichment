@@ -35,6 +35,9 @@ class DeezerApi(
                 coverMedium = album.optString("cover_medium").takeIfNotEmpty(),
                 coverBig = album.optString("cover_big").takeIfNotEmpty(),
                 coverXl = album.optString("cover_xl").takeIfNotEmpty(),
+                nbTracks = album.optInt("nb_tracks", 0).takeIf { it > 0 },
+                recordType = album.optString("record_type").takeIfNotEmpty(),
+                explicitLyrics = if (album.has("explicit_lyrics")) album.optBoolean("explicit_lyrics") else null,
             )
         }
     }

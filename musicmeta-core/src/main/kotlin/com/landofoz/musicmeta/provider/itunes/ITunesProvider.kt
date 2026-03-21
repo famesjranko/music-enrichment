@@ -32,6 +32,7 @@ class ITunesProvider(
 
     override val capabilities = listOf(
         ProviderCapability(EnrichmentType.ALBUM_ART, priority = 40),
+        ProviderCapability(EnrichmentType.ALBUM_METADATA, priority = 30),
     )
 
     override suspend fun searchCandidates(
@@ -60,13 +61,30 @@ class ITunesProvider(
             return EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
         }
 
-        // Pick the first result whose artist matches the request
         val result = results.firstOrNull {
             ArtistMatcher.isMatch(request.artist, it.artistName)
+        } ?: return EnrichmentResult.NotFound(type, id)
+
+        return when (type) {
+            EnrichmentType.ALBUM_METADATA -> enrichAlbumMetadata(result, type)
+            else -> enrichAlbumArt(result, type)
         }
+    }
 
-        if (result == null) return EnrichmentResult.NotFound(type, id)
+    private fun enrichAlbumMetadata(
+        result: ITunesAlbumResult,
+        type: EnrichmentType,
+    ): EnrichmentResult = EnrichmentResult.Success(
+        type = type,
+        data = ITunesMapper.toAlbumMetadata(result),
+        provider = id,
+        confidence = CONFIDENCE,
+    )
 
+    private fun enrichAlbumArt(
+        result: ITunesAlbumResult,
+        type: EnrichmentType,
+    ): EnrichmentResult {
         val artwork = ITunesMapper.toArtwork(result, artworkSize)
             ?: return EnrichmentResult.NotFound(type, id)
 

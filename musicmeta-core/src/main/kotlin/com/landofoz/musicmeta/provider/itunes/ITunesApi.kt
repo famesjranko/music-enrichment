@@ -34,6 +34,7 @@ class ITunesApi(
                 releaseDate = album.optString("releaseDate").takeIfNotEmpty(),
                 primaryGenreName = album.optString("primaryGenreName").takeIfNotEmpty(),
                 country = album.optString("country").takeIfNotEmpty(),
+                trackCount = album.optInt("trackCount", 0).takeIf { it > 0 },
             )
         }
     }
