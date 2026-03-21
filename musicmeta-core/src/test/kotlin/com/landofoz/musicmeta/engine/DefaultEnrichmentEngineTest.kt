@@ -277,6 +277,55 @@ class DefaultEnrichmentEngineTest {
         assertTrue(results.all { it.provider == "mb" })
     }
 
+    // --- Data-driven needsIdentityResolution ---
+
+    @Test fun `needsIdentityResolution triggers when provider needs MUSICBRAINZ_ID and request lacks it`() = runTest {
+        // Given — identity provider + art provider requiring MUSICBRAINZ_ID, request has no MBID
+        val resolution = EnrichmentData.IdentifierResolution(musicBrainzId = "mbid-resolved")
+        val idProvider = FakeProvider(id = "mb", isIdentityProvider = true, capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
+            .also { it.givenResult(EnrichmentType.GENRE, EnrichmentResult.Success(EnrichmentType.GENRE, resolution, "mb", 0.95f)) }
+        val artProvider = FakeProvider(id = "caa", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("caa")) }
+        val e = DefaultEnrichmentEngine(ProviderRegistry(listOf(idProvider, artProvider)), cache, FakeHttpClient(), EnrichmentConfig(enableIdentityResolution = true))
+
+        // When — enriching ALBUM_ART with no identifiers
+        e.enrich(req, setOf(EnrichmentType.ALBUM_ART))
+
+        // Then — identity provider was called (needsIdentityResolution returned true)
+        assertTrue("Identity provider should have been called", idProvider.enrichCalls.isNotEmpty())
+    }
+
+    @Test fun `needsIdentityResolution skips when all providers use NONE`() = runTest {
+        // Given — identity provider + art provider with NONE requirement, request has no identifiers
+        val idProvider = FakeProvider(id = "mb", isIdentityProvider = true, capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
+        val artProvider = FakeProvider(id = "deezer", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("deezer")) }
+        val e = DefaultEnrichmentEngine(ProviderRegistry(listOf(idProvider, artProvider)), cache, FakeHttpClient(), EnrichmentConfig(enableIdentityResolution = true))
+
+        // When — enriching ALBUM_ART only (all providers use NONE)
+        e.enrich(EnrichmentRequest.forAlbum("Test", "Artist"), setOf(EnrichmentType.ALBUM_ART))
+
+        // Then — identity provider should NOT have been called (no provider needs identifiers)
+        // Note: the current hardcoded implementation would call it because no MBID is present.
+        // The data-driven approach should only call when a provider actually needs an identifier.
+        assertEquals("Identity provider should not have been called", 0, idProvider.enrichCalls.size)
+    }
+
+    @Test fun `needsIdentityResolution skips when required identifiers already present`() = runTest {
+        // Given — art provider requires MUSICBRAINZ_ID, request already has MBID
+        val idProvider = FakeProvider(id = "mb", isIdentityProvider = true, capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
+        val artProvider = FakeProvider(id = "caa", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100, identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("caa")) }
+        val reqWithMbid = EnrichmentRequest.ForAlbum(EnrichmentIdentifiers(musicBrainzId = "existing-mbid"), "OK Computer", "Radiohead")
+        val e = DefaultEnrichmentEngine(ProviderRegistry(listOf(idProvider, artProvider)), cache, FakeHttpClient(), EnrichmentConfig(enableIdentityResolution = true))
+
+        // When — enriching ALBUM_ART with MBID already present
+        e.enrich(reqWithMbid, setOf(EnrichmentType.ALBUM_ART))
+
+        // Then — identity provider should NOT have been called (MBID already available)
+        assertEquals("Identity provider should not have been called", 0, idProvider.enrichCalls.size)
+    }
+
     // --- Confidence overrides ---
 
     @Test fun `confidence override replaces provider hardcoded value`() = runTest {
