@@ -102,11 +102,11 @@ Plans:
   2. When multiple providers return genre data, GenreMerger combines them: duplicate tags are deduplicated and scores are boosted, not overwritten
   3. Requesting GENRE collects results from all capable providers rather than stopping at the first success
   4. The existing genres list (plain strings) is still populated so callers using the old field do not break
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [x] 10-01-PLAN.md — GenreTag data model + GenreMerger (TDD)
-- [ ] 10-02-PLAN.md — Mapper updates for per-provider genre confidence scores
+- [x] 10-02-PLAN.md — Mapper updates for per-provider genre confidence scores
 - [ ] 10-03-PLAN.md — ProviderChain mergeable types + engine-level GenreMerger wiring
 
 ### Phase 11: Provider Coverage Expansion
@@ -136,5 +136,5 @@ Plans:
 | 7. Credits & Personnel | v0.5.0 | 1/2 | In Progress|  |
 | 8. Release Editions | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
 | 9. Artist Timeline | v0.5.0 | 2/2 | Complete   | 2026-03-21 |
-| 10. Genre Enhancement | v0.5.0 | 1/3 | In Progress|  |
+| 10. Genre Enhancement | v0.5.0 | 2/3 | In Progress|  |
 | 11. Provider Coverage Expansion | v0.5.0 | 0/TBD | Not started | - |
