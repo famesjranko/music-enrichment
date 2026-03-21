@@ -29,8 +29,8 @@ Requirements for v0.5.0 milestone. Each maps to roadmap phases.
 
 ### Timeline
 
-- [ ] **TIME-01**: User can request a structured artist timeline via ARTIST_TIMELINE composite type
-- [ ] **TIME-02**: Timeline synthesizes life-span, discography, and band member changes chronologically
+- [x] **TIME-01**: User can request a structured artist timeline via ARTIST_TIMELINE composite type
+- [x] **TIME-02**: Timeline synthesizes life-span, discography, and band member changes chronologically
 - [ ] **TIME-03**: Engine supports composite enrichment types that depend on sub-type resolution
 
 ### Genre
@@ -81,8 +81,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EDIT-01 | Phase 8 | Complete |
 | EDIT-02 | Phase 8 | Complete |
 | EDIT-03 | Phase 8 | Complete |
-| TIME-01 | Phase 9 | Pending |
-| TIME-02 | Phase 9 | Pending |
+| TIME-01 | Phase 9 | Complete |
+| TIME-02 | Phase 9 | Complete |
 | TIME-03 | Phase 9 | Pending |
 | GENR-01 | Phase 10 | Pending |
 | GENR-02 | Phase 10 | Pending |
