@@ -549,6 +549,37 @@ class DiscogsProviderTest {
     }
 
     @Test
+    fun `enrich ALBUM_METADATA includes community rating when discogsReleaseId is present`() = runTest {
+        // Given — ForAlbum with discogsReleaseId; search result plus release detail with community data
+        httpClient.givenJsonResponse("database/search", METADATA_SEARCH_WITH_ID_JSON)
+        httpClient.givenJsonResponse("releases/99001", RELEASE_DETAIL_WITH_COMMUNITY_JSON)
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — Success with communityRating from release details
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertEquals(4.2f, data.communityRating)
+    }
+
+    @Test
+    fun `enrich ALBUM_METADATA has null communityRating when no discogsReleaseId`() = runTest {
+        // Given — ForAlbum with no release ID in search result
+        httpClient.givenJsonResponse("discogs.com", METADATA_SEARCH_JSON)
+        val request = EnrichmentRequest.forAlbum(title = "OK Computer", artist = "Radiohead")
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — Success but communityRating is null since no release detail was fetched
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertNull(data.communityRating)
+    }
+
+    @Test
     fun `enrich RELEASE_EDITIONS returns NotFound for non-ForAlbum request`() = runTest {
         // Given — ForTrack request instead of ForAlbum
         val request = EnrichmentRequest.forTrack(title = "Paranoid Android", artist = "Radiohead")
@@ -665,6 +696,43 @@ class DiscogsProviderTest {
               "title": "OK Computer",
               "extraartists": [],
               "tracklist": []
+            }
+        """.trimIndent()
+
+        val METADATA_SEARCH_WITH_ID_JSON = """
+            {
+              "results": [
+                {
+                  "id": 99001,
+                  "master_id": 55002,
+                  "title": "Radiohead - OK Computer",
+                  "label": ["Parlophone"],
+                  "year": "1997",
+                  "country": "UK",
+                  "cover_image": "https://img.discogs.com/cover.jpg",
+                  "type": "release",
+                  "catno": "NODATA 02",
+                  "genre": ["Electronic", "Rock"],
+                  "style": ["Art Rock"]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val RELEASE_DETAIL_WITH_COMMUNITY_JSON = """
+            {
+              "id": 99001,
+              "title": "OK Computer",
+              "extraartists": [],
+              "tracklist": [],
+              "community": {
+                "rating": {
+                  "average": 4.2,
+                  "count": 150
+                },
+                "have": 5000,
+                "want": 1200
+              }
             }
         """.trimIndent()
 

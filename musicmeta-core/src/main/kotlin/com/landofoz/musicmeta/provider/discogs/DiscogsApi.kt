@@ -98,11 +98,21 @@ class DiscogsApi(
                 )
             }
         } else emptyList()
+        val community = json.optJSONObject("community")
+        val ratingObj = community?.optJSONObject("rating")
+        val communityRating = ratingObj?.optDouble("average", 0.0)?.toFloat()?.takeIf { it > 0f }
+        val ratingCount = ratingObj?.optInt("count", 0)?.takeIf { it > 0 }
+        val haveCount = community?.optInt("have", 0)?.takeIf { it > 0 }
+        val wantCount = community?.optInt("want", 0)?.takeIf { it > 0 }
         return DiscogsReleaseDetail(
             id = json.optLong("id", 0L),
             title = json.optString("title", ""),
             extraartists = extraartists,
             tracklist = tracklist,
+            communityRating = communityRating,
+            ratingCount = ratingCount,
+            haveCount = haveCount,
+            wantCount = wantCount,
         )
     }
 

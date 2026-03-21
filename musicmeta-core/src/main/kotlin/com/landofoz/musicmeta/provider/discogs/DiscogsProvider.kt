@@ -87,7 +87,11 @@ class DiscogsProvider(
                 ArtistMatcher.isMatch(albumRequest.artist, discogsArtist)
             } ?: releases.firstOrNull()
                 ?: return EnrichmentResult.NotFound(type, id)
-            enrichFromRelease(release, type)
+            if (type == EnrichmentType.ALBUM_METADATA) {
+                enrichAlbumMetadataWithCommunity(release, albumRequest.identifiers)
+            } else {
+                enrichFromRelease(release, type)
+            }
         } catch (e: Exception) {
             mapError(type, e)
         }
@@ -138,6 +142,23 @@ class DiscogsProvider(
             provider = id,
             confidence = ConfidenceCalculator.fuzzyMatch(hasArtistMatch = false),
         )
+    }
+
+    private suspend fun enrichAlbumMetadataWithCommunity(
+        release: DiscogsRelease,
+        identifiers: EnrichmentIdentifiers,
+    ): EnrichmentResult {
+        val baseMetadata = DiscogsMapper.toAlbumMetadata(release)
+        // Fetch release details for community rating if a releaseId is available
+        val releaseId = release.releaseId
+            ?: identifiers.get("discogsReleaseId")?.toLongOrNull()
+        val communityRating = if (releaseId != null) {
+            api.getReleaseDetails(releaseId)?.communityRating
+        } else null
+        val metadata = if (communityRating != null) {
+            baseMetadata.copy(communityRating = communityRating)
+        } else baseMetadata
+        return success(metadata, EnrichmentType.ALBUM_METADATA, release)
     }
 
     private fun mapError(type: EnrichmentType, e: Exception): EnrichmentResult.Error {
