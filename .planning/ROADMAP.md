@@ -62,7 +62,7 @@ Plans:
   5. HttpClient.fetchJsonResult() returns HttpResult<JSONObject> with distinct subtypes for Ok, ClientError (404), ServerError (500), RateLimited (429), and NetworkError
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — TTL in EnrichmentType enum, extensible identifiers, SimilarArtist/PopularTrack migration
+- [x] 03-01-PLAN.md — TTL in EnrichmentType enum, extensible identifiers, SimilarArtist/PopularTrack migration
 - [ ] 03-02-PLAN.md — ErrorKind enum on EnrichmentResult.Error, HttpResult sealed class with fetchJsonResult()
 
 ### Phase 4: New Types

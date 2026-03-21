@@ -26,9 +26,9 @@ Requirements for the Provider Abstraction Overhaul milestone. Each maps to roadm
 
 ### Public API
 
-- [ ] **API-01**: TTL moved into EnrichmentType enum with config override
-- [ ] **API-02**: EnrichmentIdentifiers gains extensible extra map with get()/withExtra()
-- [ ] **API-03**: SimilarArtist and PopularTrack use EnrichmentIdentifiers instead of musicBrainzId
+- [x] **API-01**: TTL moved into EnrichmentType enum with config override
+- [x] **API-02**: EnrichmentIdentifiers gains extensible extra map with get()/withExtra()
+- [x] **API-03**: SimilarArtist and PopularTrack use EnrichmentIdentifiers instead of musicBrainzId
 - [ ] **API-04**: ErrorKind enum added to EnrichmentResult.Error
 - [ ] **API-05**: HttpResult sealed class added with fetchJsonResult() on HttpClient
 
@@ -89,9 +89,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ABST-04 | Phase 2 | Complete |
 | ABST-05 | Phase 2 | Complete |
 | ABST-06 | Phase 2 | Complete |
-| API-01 | Phase 3 | Pending |
-| API-02 | Phase 3 | Pending |
-| API-03 | Phase 3 | Pending |
+| API-01 | Phase 3 | Complete |
+| API-02 | Phase 3 | Complete |
+| API-03 | Phase 3 | Complete |
 | API-04 | Phase 3 | Pending |
 | API-05 | Phase 3 | Pending |
 | TYPE-01 | Phase 4 | Pending |
