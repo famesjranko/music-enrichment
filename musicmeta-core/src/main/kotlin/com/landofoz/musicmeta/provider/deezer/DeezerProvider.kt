@@ -29,7 +29,7 @@ class DeezerProvider(
     override val isAvailable = true
 
     override val capabilities = listOf(
-        ProviderCapability(EnrichmentType.ALBUM_ART, priority = 50, requiresIdentifier = false),
+        ProviderCapability(EnrichmentType.ALBUM_ART, priority = 50),
     )
 
     override suspend fun searchCandidates(

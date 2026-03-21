@@ -28,6 +28,7 @@ class MusicBrainzProvider(
     override val displayName: String = "MusicBrainz"
     override val requiresApiKey: Boolean = false
     override val isAvailable: Boolean = true
+    override val isIdentityProvider: Boolean = true
 
     override val capabilities: List<ProviderCapability> = listOf(
         ProviderCapability(EnrichmentType.GENRE, priority = 100),
@@ -36,6 +37,9 @@ class MusicBrainzProvider(
         ProviderCapability(EnrichmentType.RELEASE_TYPE, priority = 100),
         ProviderCapability(EnrichmentType.COUNTRY, priority = 100),
     )
+
+    override suspend fun resolveIdentity(request: EnrichmentRequest): EnrichmentResult =
+        enrich(request, EnrichmentType.GENRE)
 
     override suspend fun searchCandidates(
         request: EnrichmentRequest,

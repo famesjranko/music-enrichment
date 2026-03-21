@@ -6,6 +6,7 @@ import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
 import com.landofoz.musicmeta.PopularTrack
+import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.http.HttpClient
 import com.landofoz.musicmeta.http.RateLimiter
@@ -30,7 +31,7 @@ class ListenBrainzProvider(
         ProviderCapability(
             type = EnrichmentType.ARTIST_POPULARITY,
             priority = PRIORITY,
-            requiresIdentifier = true,
+            identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
         ),
     )
 

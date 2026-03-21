@@ -5,6 +5,7 @@ import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.http.HttpClient
 import com.landofoz.musicmeta.http.RateLimiter
@@ -30,7 +31,7 @@ class WikidataProvider(
         ProviderCapability(
             type = EnrichmentType.ARTIST_PHOTO,
             priority = PRIORITY,
-            requiresIdentifier = true,
+            identifierRequirement = IdentifierRequirement.WIKIDATA_ID,
         ),
     )
 

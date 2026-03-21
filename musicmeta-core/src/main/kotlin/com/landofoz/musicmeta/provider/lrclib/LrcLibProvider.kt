@@ -31,12 +31,10 @@ class LrcLibProvider(
         ProviderCapability(
             type = EnrichmentType.LYRICS_SYNCED,
             priority = 100,
-            requiresIdentifier = false,
         ),
         ProviderCapability(
             type = EnrichmentType.LYRICS_PLAIN,
             priority = 100,
-            requiresIdentifier = false,
         ),
     )
 
