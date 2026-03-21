@@ -30,8 +30,8 @@ v0.4.0 moves from a working prototype to a well-abstracted library. Five sequent
   5. Wikidata claim resolution returns the preferred-rank claim when one exists, not always the first in the array
 **Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Fix MusicBrainz empty-result misclassification, Last.fm HTTPS, Last.fm TRACK_POPULARITY removal
-- [ ] 01-02-PLAN.md — Fix LRCLIB duration truncation, Wikidata preferred-rank claim selection
+- [x] 01-01-PLAN.md — Fix MusicBrainz empty-result misclassification, Last.fm HTTPS, Last.fm TRACK_POPULARITY removal
+- [x] 01-02-PLAN.md — Fix LRCLIB duration truncation, Wikidata preferred-rank claim selection
 
 ### Phase 2: Provider Abstraction
 **Goal**: Provider internals are isolated behind a typed abstraction layer so that adding or changing a provider never requires touching public API types
