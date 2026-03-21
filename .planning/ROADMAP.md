@@ -59,7 +59,11 @@ Plans:
   2. Credits from MusicBrainz (recording/work artist-rels) are returned at priority 100 and include performer, producer, composer, and engineer roles
   3. Credits from Discogs (extraartists) are returned at priority 50 as fallback when MusicBrainz has no data
   4. Each credit entry carries a roleCategory field (performance, production, songwriting) so consumers can group credits without parsing role strings
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — CREDITS data model + MusicBrainz recording credits (API, parser, mapper, provider)
+- [ ] 07-02-PLAN.md — Discogs release details credits (API, models, mapper, provider)
 
 ### Phase 8: Release Editions
 **Goal**: Consumers can list all known editions and pressings of an album via a single RELEASE_EDITIONS enrichment type backed by MusicBrainz and Discogs
@@ -116,7 +120,7 @@ Plans:
 | 4. New Types | v0.4.0 | 4/4 | Complete | 2026-03-21 |
 | 5. Deepening | v0.4.0 | 4/4 | Complete | 2026-03-21 |
 | 6. Tech Debt Cleanup | v0.5.0 | 4/4 | Complete   | 2026-03-21 |
-| 7. Credits & Personnel | v0.5.0 | 0/TBD | Not started | - |
+| 7. Credits & Personnel | v0.5.0 | 0/2 | Planned | - |
 | 8. Release Editions | v0.5.0 | 0/TBD | Not started | - |
 | 9. Artist Timeline | v0.5.0 | 0/TBD | Not started | - |
 | 10. Genre Enhancement | v0.5.0 | 0/TBD | Not started | - |
