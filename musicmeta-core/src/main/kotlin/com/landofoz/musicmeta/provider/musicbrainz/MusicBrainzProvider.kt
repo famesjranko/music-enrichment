@@ -126,7 +126,7 @@ class MusicBrainzProvider(
         }
 
         val releases = api.searchReleases(request.title, request.artist)
-        if (releases.isEmpty()) return EnrichmentResult.RateLimited(type, id)
+        if (releases.isEmpty()) return EnrichmentResult.NotFound(type, id)
 
         val best = releases.firstOrNull { it.score >= minMatchScore }
             ?: return EnrichmentResult.NotFound(type, id)
@@ -167,7 +167,7 @@ class MusicBrainzProvider(
         }
 
         val artists = api.searchArtists(request.name)
-        if (artists.isEmpty()) return EnrichmentResult.RateLimited(type, id)
+        if (artists.isEmpty()) return EnrichmentResult.NotFound(type, id)
 
         val best = pickBestArtist(request.name, artists)
         if (best.score < minMatchScore) {
@@ -197,7 +197,7 @@ class MusicBrainzProvider(
         type: EnrichmentType,
     ): EnrichmentResult {
         val recordings = api.searchRecordings(request.title, request.artist)
-        if (recordings.isEmpty()) return EnrichmentResult.RateLimited(type, id)
+        if (recordings.isEmpty()) return EnrichmentResult.NotFound(type, id)
 
         val best = recordings.firstOrNull { it.score >= minMatchScore }
             ?: return EnrichmentResult.NotFound(type, id)
