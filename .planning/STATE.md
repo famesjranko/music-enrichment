@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: Provider Abstraction Overhaul
 status: unknown
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-21T08:51:31.708Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-21T09:10:21.113Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 11
+  completed_plans: 8
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Consumers get comprehensive music metadata from a single enrich() call without knowing provider details.
-**Current focus:** Phase 03 — Public API Cleanup
+**Current focus:** Phase 04 — New Types
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 04 (New Types) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: Not started
 | Phase 02-provider-abstraction P03 | 7min | 2 tasks | 24 files |
 | Phase 03-public-api-cleanup P01 | 5min | 2 tasks | 11 files |
 | Phase 03-public-api-cleanup P02 | 7min | 2 tasks | 7 files |
+| Phase 04-new-types P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,7 @@ Plan: Not started
 - [Phase 03-public-api-cleanup]: TTL values carried as defaultTtlMs on EnrichmentType enum entries with config.ttlOverrides for per-type override
 - [Phase 03-public-api-cleanup]: EnrichmentIdentifiers extended with extra map, get(), withExtra() for extensible provider IDs; @Serializable added for data class embedding
 - [Phase 03-public-api-cleanup]: ErrorKind.UNKNOWN default preserves all existing Error construction sites; fetchJsonResult has no retry logic
+- [Phase 04-new-types]: Supporting data classes (BandMember, DiscographyAlbum, etc.) placed as top-level @Serializable types consistent with existing SimilarArtist/PopularTrack pattern
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T08:48:24.218Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-21T09:10:21.111Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None

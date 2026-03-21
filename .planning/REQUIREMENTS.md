@@ -34,13 +34,13 @@ Requirements for the Provider Abstraction Overhaul milestone. Each maps to roadm
 
 ### New Types
 
-- [ ] **TYPE-01**: BAND_MEMBERS type with MusicBrainz and Discogs providers
-- [ ] **TYPE-02**: ARTIST_DISCOGRAPHY type with MusicBrainz and Deezer providers
-- [ ] **TYPE-03**: ALBUM_TRACKS type with MusicBrainz and Deezer providers
-- [ ] **TYPE-04**: SIMILAR_TRACKS type with Last.fm and Deezer providers
-- [ ] **TYPE-05**: ARTIST_BANNER type with Fanart.tv provider
-- [ ] **TYPE-06**: ARTIST_LINKS type with MusicBrainz provider
-- [ ] **TYPE-07**: Artwork sizes enhancement (sizes list on Artwork, all 4 artwork providers updated)
+- [x] **TYPE-01**: BAND_MEMBERS type with MusicBrainz and Discogs providers
+- [x] **TYPE-02**: ARTIST_DISCOGRAPHY type with MusicBrainz and Deezer providers
+- [x] **TYPE-03**: ALBUM_TRACKS type with MusicBrainz and Deezer providers
+- [x] **TYPE-04**: SIMILAR_TRACKS type with Last.fm and Deezer providers
+- [x] **TYPE-05**: ARTIST_BANNER type with Fanart.tv provider
+- [x] **TYPE-06**: ARTIST_LINKS type with MusicBrainz provider
+- [x] **TYPE-07**: Artwork sizes enhancement (sizes list on Artwork, all 4 artwork providers updated)
 - [ ] **TYPE-08**: Wikidata expanded properties (P569, P570, P495, P106, P373)
 
 ### Deepening
@@ -94,13 +94,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-03 | Phase 3 | Complete |
 | API-04 | Phase 3 | Complete |
 | API-05 | Phase 3 | Complete |
-| TYPE-01 | Phase 4 | Pending |
-| TYPE-02 | Phase 4 | Pending |
-| TYPE-03 | Phase 4 | Pending |
-| TYPE-04 | Phase 4 | Pending |
-| TYPE-05 | Phase 4 | Pending |
-| TYPE-06 | Phase 4 | Pending |
-| TYPE-07 | Phase 4 | Pending |
+| TYPE-01 | Phase 4 | Complete |
+| TYPE-02 | Phase 4 | Complete |
+| TYPE-03 | Phase 4 | Complete |
+| TYPE-04 | Phase 4 | Complete |
+| TYPE-05 | Phase 4 | Complete |
+| TYPE-06 | Phase 4 | Complete |
+| TYPE-07 | Phase 4 | Complete |
 | TYPE-08 | Phase 4 | Pending |
 | DEEP-01 | Phase 5 | Pending |
 | DEEP-02 | Phase 5 | Pending |

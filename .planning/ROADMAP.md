@@ -79,7 +79,7 @@ Plans:
   7. WikidataProvider returns birth/death date, country of origin, and occupation in Metadata when those Wikidata properties are present
 **Plans**: 4 plans
 Plans:
-- [ ] 04-01-PLAN.md — New EnrichmentType values, EnrichmentData subclasses, ArtworkSize, serialization tests
+- [x] 04-01-PLAN.md — New EnrichmentType values, EnrichmentData subclasses, ArtworkSize, serialization tests
 - [ ] 04-02-PLAN.md — MusicBrainz: BAND_MEMBERS, ARTIST_DISCOGRAPHY, ALBUM_TRACKS, ARTIST_LINKS capabilities
 - [ ] 04-03-PLAN.md — Deezer discography/tracks, Last.fm similar tracks, Fanart.tv artist banner
 - [ ] 04-04-PLAN.md — Artwork sizes for 4 providers, Wikidata expanded properties, Discogs band members
