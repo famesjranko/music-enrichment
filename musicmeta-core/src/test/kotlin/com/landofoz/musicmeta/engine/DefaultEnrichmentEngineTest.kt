@@ -401,6 +401,167 @@ class DefaultEnrichmentEngineTest {
         // Then — filtered out as NotFound
         assertTrue(results[EnrichmentType.ALBUM_ART] is EnrichmentResult.NotFound)
     }
+
+    // --- Composite timeline ---
+
+    private val artistReq = EnrichmentRequest.forArtist("Radiohead")
+
+    private fun identityProviderWithMetadata(beginDate: String? = "1985", endDate: String? = null, artistType: String? = "Group") =
+        FakeProvider(
+            id = "mb",
+            isIdentityProvider = true,
+            capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)),
+        ).also {
+            it.givenIdentityResult(
+                EnrichmentResult.Success(
+                    type = EnrichmentType.GENRE,
+                    data = EnrichmentData.Metadata(artistType = artistType, beginDate = beginDate, endDate = endDate),
+                    provider = "mb",
+                    confidence = 0.95f,
+                    resolvedIdentifiers = EnrichmentIdentifiers(musicBrainzId = "mbid-rh"),
+                )
+            )
+        }
+
+    private fun discographyProvider() =
+        FakeProvider(id = "mb-disco", capabilities = listOf(ProviderCapability(EnrichmentType.ARTIST_DISCOGRAPHY, 100)))
+            .also {
+                it.givenResult(
+                    EnrichmentType.ARTIST_DISCOGRAPHY,
+                    EnrichmentResult.Success(
+                        type = EnrichmentType.ARTIST_DISCOGRAPHY,
+                        data = EnrichmentData.Discography(albums = listOf(DiscographyAlbum("OK Computer", year = "1997"))),
+                        provider = "mb-disco",
+                        confidence = 0.95f,
+                    )
+                )
+            }
+
+    private fun bandMembersProvider() =
+        FakeProvider(id = "mb-members", capabilities = listOf(ProviderCapability(EnrichmentType.BAND_MEMBERS, 100)))
+            .also {
+                it.givenResult(
+                    EnrichmentType.BAND_MEMBERS,
+                    EnrichmentResult.Success(
+                        type = EnrichmentType.BAND_MEMBERS,
+                        data = EnrichmentData.BandMembers(members = listOf(BandMember("Thom Yorke", activePeriod = "1985-present"))),
+                        provider = "mb-members",
+                        confidence = 0.95f,
+                    )
+                )
+            }
+
+    @Test fun `enrich resolves ARTIST_TIMELINE from sub-types automatically`() = runTest {
+        // Given — identity provider + discography + band members providers
+        val idProvider = identityProviderWithMetadata()
+        val discoProvider = discographyProvider()
+        val membersProvider = bandMembersProvider()
+        val e = DefaultEnrichmentEngine(
+            ProviderRegistry(listOf(idProvider, discoProvider, membersProvider)),
+            cache,
+            FakeHttpClient(),
+            EnrichmentConfig(enableIdentityResolution = true),
+        )
+
+        // When — requesting only ARTIST_TIMELINE
+        val results = e.enrich(artistReq, setOf(EnrichmentType.ARTIST_TIMELINE))
+
+        // Then — result is Success with ArtistTimeline containing events
+        val timeline = results[EnrichmentType.ARTIST_TIMELINE]
+        assertTrue("Expected Success but got $timeline", timeline is EnrichmentResult.Success)
+        val data = (timeline as EnrichmentResult.Success).data as EnrichmentData.ArtistTimeline
+        val eventTypes = data.events.map { it.type }
+        assertTrue("Expected 'formed' event", "formed" in eventTypes)
+        assertTrue("Expected 'first_album' event", "first_album" in eventTypes)
+        assertTrue("Expected 'member_joined' event", "member_joined" in eventTypes)
+    }
+
+    @Test fun `enrich resolves ARTIST_TIMELINE without caller specifying sub-types`() = runTest {
+        // Given — identity provider + discography + band members providers
+        val idProvider = identityProviderWithMetadata()
+        val discoProvider = discographyProvider()
+        val membersProvider = bandMembersProvider()
+        val e = DefaultEnrichmentEngine(
+            ProviderRegistry(listOf(idProvider, discoProvider, membersProvider)),
+            cache,
+            FakeHttpClient(),
+            EnrichmentConfig(enableIdentityResolution = true),
+        )
+
+        // When — requesting only ARTIST_TIMELINE (NOT ARTIST_DISCOGRAPHY or BAND_MEMBERS)
+        val results = e.enrich(artistReq, setOf(EnrichmentType.ARTIST_TIMELINE))
+
+        // Then — only ARTIST_TIMELINE is in the result map; sub-types are not exposed
+        assertTrue("ARTIST_TIMELINE should be in results", EnrichmentType.ARTIST_TIMELINE in results)
+        assertFalse("ARTIST_DISCOGRAPHY should NOT be in results", EnrichmentType.ARTIST_DISCOGRAPHY in results)
+        assertFalse("BAND_MEMBERS should NOT be in results", EnrichmentType.BAND_MEMBERS in results)
+    }
+
+    @Test fun `ARTIST_TIMELINE gracefully degrades when sub-types return NotFound`() = runTest {
+        // Given — identity metadata with beginDate, but no discography or band members providers
+        val idProvider = identityProviderWithMetadata(beginDate = "1985", artistType = "Group")
+        val e = DefaultEnrichmentEngine(
+            ProviderRegistry(listOf(idProvider)),
+            cache,
+            FakeHttpClient(),
+            EnrichmentConfig(enableIdentityResolution = true),
+        )
+
+        // When — requesting ARTIST_TIMELINE with no sub-type providers
+        val results = e.enrich(artistReq, setOf(EnrichmentType.ARTIST_TIMELINE))
+
+        // Then — still a Success with a partial timeline containing just the life-span event
+        val timeline = results[EnrichmentType.ARTIST_TIMELINE]
+        assertTrue("Expected Success but got $timeline", timeline is EnrichmentResult.Success)
+        val data = (timeline as EnrichmentResult.Success).data as EnrichmentData.ArtistTimeline
+        assertEquals(1, data.events.size)
+        assertEquals("formed", data.events[0].type)
+        assertEquals("1985", data.events[0].date)
+    }
+
+    @Test fun `ARTIST_TIMELINE includes sub-type results when caller also requests them`() = runTest {
+        // Given — identity provider + discography + band members providers
+        val idProvider = identityProviderWithMetadata()
+        val discoProvider = discographyProvider()
+        val membersProvider = bandMembersProvider()
+        val e = DefaultEnrichmentEngine(
+            ProviderRegistry(listOf(idProvider, discoProvider, membersProvider)),
+            cache,
+            FakeHttpClient(),
+            EnrichmentConfig(enableIdentityResolution = true),
+        )
+
+        // When — requesting ARTIST_TIMELINE + ARTIST_DISCOGRAPHY explicitly
+        val results = e.enrich(artistReq, setOf(EnrichmentType.ARTIST_TIMELINE, EnrichmentType.ARTIST_DISCOGRAPHY))
+
+        // Then — both are in the result map
+        assertTrue("ARTIST_TIMELINE should be in results", results[EnrichmentType.ARTIST_TIMELINE] is EnrichmentResult.Success)
+        assertTrue("ARTIST_DISCOGRAPHY should be in results", results[EnrichmentType.ARTIST_DISCOGRAPHY] is EnrichmentResult.Success)
+    }
+
+    @Test fun `ARTIST_TIMELINE is cached like standard types`() = runTest {
+        // Given — identity provider + discography + band members providers
+        val idProvider = identityProviderWithMetadata()
+        val discoProvider = discographyProvider()
+        val membersProvider = bandMembersProvider()
+        val e = DefaultEnrichmentEngine(
+            ProviderRegistry(listOf(idProvider, discoProvider, membersProvider)),
+            cache,
+            FakeHttpClient(),
+            EnrichmentConfig(enableIdentityResolution = true),
+        )
+
+        // When — first enrich call
+        e.enrich(artistReq, setOf(EnrichmentType.ARTIST_TIMELINE))
+        val discoCallsAfterFirst = discoProvider.enrichCalls.size
+
+        // When — second enrich call for the same request
+        val results = e.enrich(artistReq, setOf(EnrichmentType.ARTIST_TIMELINE))
+
+        // Then — ARTIST_TIMELINE is returned from cache; discography provider not called again
+        assertTrue("ARTIST_TIMELINE should be Success on second call", results[EnrichmentType.ARTIST_TIMELINE] is EnrichmentResult.Success)
+        assertEquals("Discography provider should not be called again on cache hit", discoCallsAfterFirst, discoProvider.enrichCalls.size)
+    }
 }
 
 private class FakeProviderWithSearch(

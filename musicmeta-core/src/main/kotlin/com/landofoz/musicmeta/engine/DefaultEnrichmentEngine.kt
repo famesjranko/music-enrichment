@@ -42,11 +42,12 @@ class DefaultEnrichmentEngine(
 
         try {
             withTimeout(config.enrichTimeoutMs) {
+                var identityResult: EnrichmentResult? = null
                 val enrichedRequest = if (config.enableIdentityResolution && needsIdentityResolution(request, uncachedTypes)) {
-                    resolveIdentity(request, results, uncachedTypes)
+                    resolveIdentity(request, results, uncachedTypes).also { identityResult = it.second }.first
                 } else request
 
-                results.putAll(resolveTypes(enrichedRequest, uncachedTypes, results))
+                results.putAll(resolveTypes(enrichedRequest, uncachedTypes, identityResult))
             }
         } catch (_: TimeoutCancellationException) {
             logger.warn(TAG, "Enrich timed out after ${config.enrichTimeoutMs}ms, returning partial results")
@@ -96,23 +97,24 @@ class DefaultEnrichmentEngine(
 
     override fun getProviders(): List<ProviderInfo> = registry.providerInfos()
 
+    /** Returns the enriched request and the raw identity result (for composite type synthesis). */
     private suspend fun resolveIdentity(
         request: EnrichmentRequest,
         results: MutableMap<EnrichmentType, EnrichmentResult>,
         uncachedTypes: MutableSet<EnrichmentType>,
-    ): EnrichmentRequest {
-        val provider = registry.identityProvider() ?: return request
+    ): Pair<EnrichmentRequest, EnrichmentResult?> {
+        val provider = registry.identityProvider() ?: return request to null
         val identityType = IDENTITY_TYPES.firstOrNull { it in uncachedTypes } ?: IDENTITY_TYPES.first()
 
         val result = try {
             provider.resolveIdentity(request)
         } catch (e: Exception) {
             logger.warn(TAG, "Identity resolution failed: ${e.message}", e)
-            return request
+            return request to null
         }
         if (result !is EnrichmentResult.Success) {
             logger.debug(TAG, "Identity resolution returned ${result::class.simpleName}")
-            return request
+            return request to null
         }
 
         // Extract resolved identifiers from the result
@@ -125,7 +127,7 @@ class DefaultEnrichmentEngine(
                     if (type in uncachedTypes) { results[type] = result; uncachedTypes.remove(type) }
                 }
             }
-            return request
+            return request to result
         }
 
         logger.debug(TAG, "Identity resolved: mbid=${resolved.musicBrainzId}, wikidataId=${resolved.wikidataId}, wpTitle=${resolved.wikipediaTitle}")
@@ -153,13 +155,13 @@ class DefaultEnrichmentEngine(
             }
         }
 
-        return request.withIdentifiers(mergedIds)
+        return request.withIdentifiers(mergedIds) to result
     }
 
     private suspend fun resolveTypes(
         request: EnrichmentRequest,
         types: Set<EnrichmentType>,
-        identityResults: Map<EnrichmentType, EnrichmentResult> = emptyMap(),
+        identityResult: EnrichmentResult? = null,
     ): Map<EnrichmentType, EnrichmentResult> = coroutineScope {
         val compositeTypes = types.filter { it in COMPOSITE_DEPENDENCIES }
         val standardTypes = types - compositeTypes.toSet()
@@ -181,7 +183,7 @@ class DefaultEnrichmentEngine(
 
         // Synthesize composite types from resolved sub-types
         for (compositeType in compositeTypes) {
-            resolved[compositeType] = synthesizeComposite(compositeType, resolved, identityResults)
+            resolved[compositeType] = synthesizeComposite(compositeType, resolved, identityResult)
         }
 
         // Only return types the caller requested — exclude internal sub-types
@@ -191,26 +193,22 @@ class DefaultEnrichmentEngine(
     private fun synthesizeComposite(
         type: EnrichmentType,
         resolved: Map<EnrichmentType, EnrichmentResult>,
-        identityResults: Map<EnrichmentType, EnrichmentResult>,
+        identityResult: EnrichmentResult?,
     ): EnrichmentResult {
         return when (type) {
-            EnrichmentType.ARTIST_TIMELINE -> synthesizeTimeline(resolved, identityResults)
+            EnrichmentType.ARTIST_TIMELINE -> synthesizeTimeline(resolved, identityResult)
             else -> EnrichmentResult.NotFound(type, "no_composite_handler")
         }
     }
 
     private fun synthesizeTimeline(
         resolved: Map<EnrichmentType, EnrichmentResult>,
-        identityResults: Map<EnrichmentType, EnrichmentResult>,
+        identityResult: EnrichmentResult?,
     ): EnrichmentResult {
-        // Find metadata from identity resolution (any result with Metadata data)
-        val metadata = identityResults.values.firstOrNull {
-            it is EnrichmentResult.Success && it.data is EnrichmentData.Metadata
-        }
         val discography = resolved[EnrichmentType.ARTIST_DISCOGRAPHY]
         val bandMembers = resolved[EnrichmentType.BAND_MEMBERS]
 
-        val timeline = TimelineSynthesizer.synthesize(metadata, discography, bandMembers)
+        val timeline = TimelineSynthesizer.synthesize(identityResult, discography, bandMembers)
         return EnrichmentResult.Success(
             type = EnrichmentType.ARTIST_TIMELINE,
             data = timeline,
