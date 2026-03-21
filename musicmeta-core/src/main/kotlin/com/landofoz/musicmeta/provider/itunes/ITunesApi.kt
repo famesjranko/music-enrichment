@@ -1,6 +1,7 @@
 package com.landofoz.musicmeta.provider.itunes
 
 import com.landofoz.musicmeta.http.HttpClient
+import com.landofoz.musicmeta.http.HttpResult
 import com.landofoz.musicmeta.http.RateLimiter
 import java.net.URLEncoder
 
@@ -20,7 +21,10 @@ class ITunesApi(
         val encoded = URLEncoder.encode(term, "UTF-8")
         val url = "$BASE_URL/search?media=music&entity=album&term=$encoded&limit=$limit"
         val json = rateLimiter.execute {
-            httpClient.fetchJson(url)
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
         } ?: return emptyList()
 
         val results = json.optJSONArray("results") ?: return emptyList()

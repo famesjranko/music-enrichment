@@ -1,6 +1,7 @@
 package com.landofoz.musicmeta.provider.fanarttv
 
 import com.landofoz.musicmeta.http.HttpClient
+import com.landofoz.musicmeta.http.HttpResult
 import com.landofoz.musicmeta.http.RateLimiter
 import org.json.JSONObject
 
@@ -19,7 +20,12 @@ class FanartTvApi(
 
     suspend fun getArtistImages(mbid: String): FanartTvArtistImages? {
         val url = "$BASE_URL/$mbid?api_key=${projectKeyProvider()}"
-        val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return null
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return null
         return parseArtistImages(json)
     }
 

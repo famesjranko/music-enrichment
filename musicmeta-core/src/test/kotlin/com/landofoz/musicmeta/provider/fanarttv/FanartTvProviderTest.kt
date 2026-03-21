@@ -5,6 +5,7 @@ import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.ErrorKind
 import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
@@ -237,6 +238,21 @@ class FanartTvProviderTest {
         assertTrue(result is EnrichmentResult.Success)
         val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
         assertNull(artwork.sizes)
+    }
+
+    @Test
+    fun `enrich returns Error with NETWORK ErrorKind when API fails`() = runTest {
+        // Given — simulate an IOException from the HTTP layer
+        httpClient.givenIoException("fanart.tv")
+        val request = artistRequest()
+
+        // When — enriching for artist photo
+        val result = provider.enrich(request, EnrichmentType.ARTIST_PHOTO)
+
+        // Then — Error with NETWORK kind because IOException maps to ErrorKind.NETWORK
+        assertTrue(result is EnrichmentResult.Error)
+        assertEquals(ErrorKind.NETWORK, (result as EnrichmentResult.Error).errorKind)
+        assertEquals("fanarttv", result.provider)
     }
 
     private companion object {

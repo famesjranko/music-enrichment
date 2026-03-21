@@ -5,10 +5,12 @@ import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.ErrorKind
 import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.engine.ConfidenceCalculator
 import com.landofoz.musicmeta.http.HttpClient
+import com.landofoz.musicmeta.http.HttpResult
 import com.landofoz.musicmeta.http.RateLimiter
 
 /**
@@ -62,8 +64,11 @@ class WikipediaProvider(
     }
 
     private suspend fun enrichBio(title: String, type: EnrichmentType): EnrichmentResult {
-        val summary = api.getPageSummary(title)
-            ?: return EnrichmentResult.NotFound(type, id)
+        val summary = try {
+            api.getPageSummary(title) ?: return EnrichmentResult.NotFound(type, id)
+        } catch (e: Exception) {
+            return mapError(type, e)
+        }
         return EnrichmentResult.Success(
             type = type,
             data = WikipediaMapper.toBiography(summary),
@@ -73,7 +78,11 @@ class WikipediaProvider(
     }
 
     private suspend fun enrichArtistPhoto(title: String, type: EnrichmentType): EnrichmentResult {
-        val mediaItems = api.getPageMediaList(title)
+        val mediaItems = try {
+            api.getPageMediaList(title)
+        } catch (e: Exception) {
+            return mapError(type, e)
+        }
         val bestImage = mediaItems.firstOrNull()
             ?: return EnrichmentResult.NotFound(type, id)
         return EnrichmentResult.Success(
@@ -92,13 +101,27 @@ class WikipediaProvider(
         if (wikidataId.isNullOrBlank()) return null
         val url = "$WIKIDATA_API?action=wbgetentities&ids=$wikidataId" +
             "&props=sitelinks&sitefilter=enwiki&format=json"
-        val json = wikidataRateLimiter.execute { httpClient.fetchJson(url) } ?: return null
+        val json = wikidataRateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return null
         return json.optJSONObject("entities")
             ?.optJSONObject(wikidataId)
             ?.optJSONObject("sitelinks")
             ?.optJSONObject("enwiki")
             ?.optString("title")
             ?.takeIf { it.isNotBlank() }
+    }
+
+    private fun mapError(type: EnrichmentType, e: Exception): EnrichmentResult.Error {
+        val kind = when (e) {
+            is java.io.IOException -> ErrorKind.NETWORK
+            is org.json.JSONException -> ErrorKind.PARSE
+            else -> ErrorKind.UNKNOWN
+        }
+        return EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e, kind)
     }
 
     private companion object {
