@@ -73,7 +73,11 @@ Plans:
   1. User can request EnrichmentType.RELEASE_EDITIONS for an album and receive a list of editions with at least title, year, country, and format
   2. MusicBrainz returns editions from the release-group releases endpoint at priority 100
   3. Discogs returns editions from the master versions endpoint at priority 50
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — RELEASE_EDITIONS data model + MusicBrainz release-group editions (API, parser, mapper, provider)
+- [ ] 08-02-PLAN.md — Discogs master versions editions (API, models, mapper, provider)
 
 ### Phase 9: Artist Timeline
 **Goal**: Consumers can retrieve a structured chronological artist timeline that synthesizes life-span, discography, and band-member changes without making separate enrichment calls
@@ -121,7 +125,7 @@ Plans:
 | 5. Deepening | v0.4.0 | 4/4 | Complete | 2026-03-21 |
 | 6. Tech Debt Cleanup | v0.5.0 | 4/4 | Complete   | 2026-03-21 |
 | 7. Credits & Personnel | v0.5.0 | 1/2 | In Progress|  |
-| 8. Release Editions | v0.5.0 | 0/TBD | Not started | - |
+| 8. Release Editions | v0.5.0 | 0/2 | Not started | - |
 | 9. Artist Timeline | v0.5.0 | 0/TBD | Not started | - |
 | 10. Genre Enhancement | v0.5.0 | 0/TBD | Not started | - |
 | 11. Provider Coverage Expansion | v0.5.0 | 0/TBD | Not started | - |
