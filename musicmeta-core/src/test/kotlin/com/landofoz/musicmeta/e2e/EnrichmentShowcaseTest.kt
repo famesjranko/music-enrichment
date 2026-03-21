@@ -224,35 +224,42 @@ class EnrichmentShowcaseTest {
         banner("COVERAGE GAPS & WISHLIST")
         println("""
   CURRENT types (${EnrichmentType.entries.size}):
-    Artwork:   ALBUM_ART, ARTIST_PHOTO, ARTIST_BACKGROUND, ARTIST_LOGO, CD_ART
-    Metadata:  GENRE, LABEL, RELEASE_DATE, RELEASE_TYPE, COUNTRY, SIMILAR_ARTISTS
-    Text:      ARTIST_BIO, LYRICS_SYNCED, LYRICS_PLAIN
-    Stats:     TRACK_POPULARITY, ARTIST_POPULARITY
+    Artwork:       ALBUM_ART, ALBUM_ART_BACK, ALBUM_BOOKLET, ARTIST_PHOTO,
+                   ARTIST_BACKGROUND, ARTIST_LOGO, ARTIST_BANNER, CD_ART
+    Metadata:      GENRE, LABEL, RELEASE_DATE, RELEASE_TYPE, COUNTRY,
+                   BAND_MEMBERS, ARTIST_DISCOGRAPHY, ALBUM_TRACKS, ALBUM_METADATA
+    Text:          ARTIST_BIO, LYRICS_SYNCED, LYRICS_PLAIN
+    Relationships: SIMILAR_ARTISTS, SIMILAR_TRACKS, ARTIST_LINKS
+    Stats:         ARTIST_POPULARITY, TRACK_POPULARITY
+
+  MULTI-PROVIDER COVERAGE (v0.4.0):
+    - ALBUM_ART          -> CAA, Fanart.tv, Deezer, iTunes (all with multi-size)
+    - ARTIST_PHOTO       -> Wikidata, Fanart.tv, Wikipedia (page media-list)
+    - BAND_MEMBERS       -> MusicBrainz (artist-rels), Discogs (artist endpoint)
+    - ARTIST_DISCOGRAPHY -> MusicBrainz (browse release-groups), Deezer (artist albums)
+    - ALBUM_TRACKS       -> MusicBrainz (media array), Deezer (album tracks)
+    - ALBUM_METADATA     -> Deezer, Discogs, iTunes (trackCount, label, genres)
+    - TRACK_POPULARITY   -> Last.fm (track.getInfo), ListenBrainz (batch recording)
+    - ARTIST_POPULARITY  -> Last.fm, ListenBrainz (batch artist)
 
   THIN COVERAGE (single provider, often behind API key):
-    - ARTIST_BACKGROUND  -> fanart.tv only (needs key + MBID)
-    - ARTIST_LOGO        -> fanart.tv only (needs key + MBID)
-    - CD_ART             -> fanart.tv only (needs key + MBID)
-    - SIMILAR_ARTISTS    -> Last.fm only (needs key), artist-only
-    - TRACK_POPULARITY   -> Last.fm (artist-level), ListenBrainz (MBID)
+    - ARTIST_BACKGROUND  -> Fanart.tv only (needs key + MBID)
+    - ARTIST_LOGO        -> Fanart.tv only (needs key + MBID)
+    - ARTIST_BANNER      -> Fanart.tv only (needs key + MBID)
+    - CD_ART             -> Fanart.tv only (needs key + MBID)
+    - SIMILAR_ARTISTS    -> Last.fm only (needs key)
+    - SIMILAR_TRACKS     -> Last.fm only (track.getSimilar)
 
   NOT YET IMPLEMENTED (wishlist):
-    - BAND_MEMBERS       -> artist lineup/members (MusicBrainz has this)
-    - SIMILAR_ALBUMS     -> albums like this one
-    - SIMILAR_TRACKS     -> tracks like this one (Last.fm has track.getSimilar)
-    - ARTIST_BANNER      -> hero/banner images (fanart.tv hdmusicbanner)
-    - ALBUM_TRACKS       -> tracklist with durations (MusicBrainz has this)
-    - ARTIST_DISCOGRAPHY -> album list for an artist (MusicBrainz has this)
-    - MULTIPLE_ART_SIZES -> return all available sizes per image, not just one
-    - ARTIST_LINKS       -> social media, website (MusicBrainz URL rels)
+    - CREDITS            -> producers, performers, composers (MusicBrainz, Discogs)
     - RELEASE_EDITIONS   -> all editions/pressings of an album (MusicBrainz)
+    - ARTIST_TIMELINE    -> formed, albums, member changes, hiatus, reunion
+    - GENRE_DEEP_DIVE    -> merged/deduplicated tags with confidence scoring
 
-  PROVIDER POTENTIAL (unused API capabilities):
-    - MusicBrainz: members, discography, tracklists, URL relations
-    - Last.fm: track.getSimilar, album.getSimilar, user recommendations
-    - Fanart.tv: hdmusicbanner, multiple image sizes per type
-    - Deezer: tracklist, artist albums, related artists
-    - Discogs: credits, tracklist, artist members
+  TECH DEBT (v0.4.0):
+    - ErrorKind enum exists but no provider categorizes errors yet
+    - HttpResult/fetchJsonResult() exists but no provider uses it yet
+    - ListenBrainz ARTIST_DISCOGRAPHY plumbing exists but not wired
         """.trimIndent())
     }
 

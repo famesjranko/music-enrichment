@@ -29,7 +29,7 @@ class WikidataApi(
         imageSize: Int = DEFAULT_IMAGE_SIZE,
     ): WikidataEntityProperties? = rateLimiter.execute {
         val url = "$BASE_URL?action=wbgetclaims&entity=$wikidataId" +
-            "&property=P18|P569|P570|P495|P106&format=json"
+            "&property=${URLEncoder.encode("P18|P569|P570|P495|P106", "UTF-8")}&format=json"
         val json = httpClient.fetchJson(url) ?: return@execute null
         val claims = json.optJSONObject("claims") ?: return@execute null
         parseEntityProperties(claims, imageSize)
