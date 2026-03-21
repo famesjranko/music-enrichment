@@ -21,13 +21,53 @@ class DiscogsApi(
     suspend fun searchReleases(title: String, artist: String, limit: Int = 5): List<DiscogsRelease> {
         val encodedTitle = URLEncoder.encode(title, "UTF-8")
         val encodedArtist = URLEncoder.encode(artist, "UTF-8")
-        val url = "$BASE_URL?type=release&title=$encodedTitle" +
+        val url = "$SEARCH_URL?type=release&title=$encodedTitle" +
             "&artist=$encodedArtist&per_page=$limit&token=${tokenProvider()}"
         val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return emptyList()
-        return parseResults(json)
+        return parseReleaseResults(json)
     }
 
-    private fun parseResults(json: JSONObject): List<DiscogsRelease> {
+    /** Search for an artist by name and return the first match's Discogs ID. */
+    suspend fun searchArtist(name: String): Long? {
+        val encoded = URLEncoder.encode(name, "UTF-8")
+        val url = "$SEARCH_URL?type=artist&q=$encoded&per_page=1&token=${tokenProvider()}"
+        val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return null
+        val results = json.optJSONArray("results") ?: return null
+        if (results.length() == 0) return null
+        val id = results.getJSONObject(0).optLong("id", 0L)
+        return if (id > 0) id else null
+    }
+
+    /** Fetch artist details including band members. */
+    suspend fun getArtist(artistId: Long): DiscogsArtist? {
+        val url = "$ARTISTS_URL/$artistId?token=${tokenProvider()}"
+        val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return null
+        return parseArtist(json)
+    }
+
+    private fun parseArtist(json: JSONObject): DiscogsArtist {
+        val members = mutableListOf<DiscogsMember>()
+        val membersArray = json.optJSONArray("members")
+        if (membersArray != null) {
+            for (i in 0 until membersArray.length()) {
+                val obj = membersArray.getJSONObject(i)
+                members.add(
+                    DiscogsMember(
+                        id = obj.optLong("id", 0L),
+                        name = obj.optString("name", ""),
+                        active = if (obj.has("active")) obj.optBoolean("active") else null,
+                    ),
+                )
+            }
+        }
+        return DiscogsArtist(
+            id = json.optLong("id", 0L),
+            name = json.optString("name", ""),
+            members = members,
+        )
+    }
+
+    private fun parseReleaseResults(json: JSONObject): List<DiscogsRelease> {
         val results = json.optJSONArray("results") ?: return emptyList()
         return (0 until results.length()).map { i ->
             val obj = results.getJSONObject(i)
@@ -45,6 +85,7 @@ class DiscogsApi(
     }
 
     private companion object {
-        const val BASE_URL = "https://api.discogs.com/database/search"
+        const val SEARCH_URL = "https://api.discogs.com/database/search"
+        const val ARTISTS_URL = "https://api.discogs.com/artists"
     }
 }

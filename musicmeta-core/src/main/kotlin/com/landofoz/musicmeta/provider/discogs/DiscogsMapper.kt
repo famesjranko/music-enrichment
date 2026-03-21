@@ -1,6 +1,8 @@
 package com.landofoz.musicmeta.provider.discogs
 
+import com.landofoz.musicmeta.BandMember
 import com.landofoz.musicmeta.EnrichmentData
+import com.landofoz.musicmeta.EnrichmentIdentifiers
 
 /** Maps Discogs DTOs to EnrichmentData subclasses. */
 object DiscogsMapper {
@@ -19,4 +21,15 @@ object DiscogsMapper {
         val releaseType = release.releaseType ?: return null
         return EnrichmentData.Metadata(releaseType = releaseType)
     }
+
+    fun toBandMembers(artist: DiscogsArtist): EnrichmentData.BandMembers =
+        EnrichmentData.BandMembers(
+            members = artist.members.map { member ->
+                BandMember(
+                    name = member.name,
+                    identifiers = EnrichmentIdentifiers()
+                        .withExtra("discogsArtistId", member.id.toString()),
+                )
+            },
+        )
 }

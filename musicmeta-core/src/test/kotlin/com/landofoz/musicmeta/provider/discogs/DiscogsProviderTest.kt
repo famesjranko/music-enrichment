@@ -179,7 +179,71 @@ class DiscogsProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns BandMembers for artist`() = runTest {
+        // Given — Discogs returns artist search result and artist detail with members
+        httpClient.givenJsonResponse("search?type=artist", ARTIST_SEARCH_JSON)
+        httpClient.givenJsonResponse("artists/12345", ARTIST_DETAIL_JSON)
+        val request = EnrichmentRequest.forArtist(name = "Radiohead")
+
+        // When — enriching for band members
+        val result = provider.enrich(request, EnrichmentType.BAND_MEMBERS)
+
+        // Then — success with 2 band members
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.BandMembers
+        assertEquals(2, data.members.size)
+        assertEquals("Thom Yorke", data.members[0].name)
+        assertEquals("Jonny Greenwood", data.members[1].name)
+    }
+
+    @Test
+    fun `enrich returns NotFound for BandMembers when artist has no members`() = runTest {
+        // Given — Discogs returns artist with empty members list
+        httpClient.givenJsonResponse("search?type=artist", ARTIST_SEARCH_JSON)
+        httpClient.givenJsonResponse("artists/12345", ARTIST_NO_MEMBERS_JSON)
+        val request = EnrichmentRequest.forArtist(name = "Solo Artist")
+
+        // When — enriching for band members
+        val result = provider.enrich(request, EnrichmentType.BAND_MEMBERS)
+
+        // Then — NotFound because artist has no members
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich returns NotFound for BandMembers when artist search fails`() = runTest {
+        // Given — Discogs artist search returns no results
+        httpClient.givenJsonResponse("search?type=artist", """{"results":[]}""")
+        val request = EnrichmentRequest.forArtist(name = "Unknown Band")
+
+        // When — enriching for band members
+        val result = provider.enrich(request, EnrichmentType.BAND_MEMBERS)
+
+        // Then — NotFound because artist was not found
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
+        val ARTIST_SEARCH_JSON = """
+            {"results":[{"id":12345,"name":"Radiohead"}]}
+        """.trimIndent()
+
+        val ARTIST_DETAIL_JSON = """
+            {
+              "id": 12345,
+              "name": "Radiohead",
+              "members": [
+                {"id": 100, "name": "Thom Yorke", "active": true},
+                {"id": 101, "name": "Jonny Greenwood", "active": true}
+              ]
+            }
+        """.trimIndent()
+
+        val ARTIST_NO_MEMBERS_JSON = """
+            {"id": 12345, "name": "Solo Artist", "members": []}
+        """.trimIndent()
+
         val SEARCH_RESULTS_JSON = """
             {
               "results": [

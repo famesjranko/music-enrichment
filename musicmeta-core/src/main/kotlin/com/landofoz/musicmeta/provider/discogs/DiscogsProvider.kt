@@ -12,7 +12,8 @@ import com.landofoz.musicmeta.http.RateLimiter
 
 /**
  * Discogs enrichment provider. Searches for album releases to supply
- * cover art and label metadata. Requires a Discogs personal access token.
+ * cover art and label metadata, and artist endpoints for band members.
+ * Requires a Discogs personal access token.
  */
 class DiscogsProvider(
     private val tokenProvider: () -> String,
@@ -34,6 +35,7 @@ class DiscogsProvider(
         ProviderCapability(EnrichmentType.ALBUM_ART, priority = 20),
         ProviderCapability(EnrichmentType.LABEL, priority = 50),
         ProviderCapability(EnrichmentType.RELEASE_TYPE, priority = 50),
+        ProviderCapability(EnrichmentType.BAND_MEMBERS, priority = 50),
     )
 
     override suspend fun enrich(
@@ -41,6 +43,13 @@ class DiscogsProvider(
         type: EnrichmentType,
     ): EnrichmentResult {
         if (!isAvailable) return EnrichmentResult.NotFound(type, id)
+
+        if (type == EnrichmentType.BAND_MEMBERS) {
+            val artistRequest = request as? EnrichmentRequest.ForArtist
+                ?: return EnrichmentResult.NotFound(type, id)
+            return enrichBandMembers(artistRequest, type)
+        }
+
         val albumRequest = request as? EnrichmentRequest.ForAlbum
             ?: return EnrichmentResult.NotFound(type, id)
 
@@ -53,6 +62,24 @@ class DiscogsProvider(
             } ?: releases.firstOrNull()
                 ?: return EnrichmentResult.NotFound(type, id)
             enrichFromRelease(release, type)
+        } catch (e: Exception) {
+            EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
+        }
+    }
+
+    private suspend fun enrichBandMembers(
+        request: EnrichmentRequest.ForArtist,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        return try {
+            val artistId = api.searchArtist(request.name)
+                ?: return EnrichmentResult.NotFound(type, id)
+            val artist = api.getArtist(artistId)
+                ?: return EnrichmentResult.NotFound(type, id)
+            if (artist.members.isEmpty()) {
+                return EnrichmentResult.NotFound(type, id)
+            }
+            success(DiscogsMapper.toBandMembers(artist), type)
         } catch (e: Exception) {
             EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
         }

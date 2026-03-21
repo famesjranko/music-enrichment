@@ -7,4 +7,12 @@ object WikidataMapper {
 
     fun toArtwork(imageUrl: String): EnrichmentData.Artwork =
         EnrichmentData.Artwork(url = imageUrl)
+
+    fun toMetadata(props: WikidataEntityProperties): EnrichmentData.Metadata =
+        EnrichmentData.Metadata(
+            beginDate = props.birthDate,
+            endDate = props.deathDate,
+            country = props.countryOfOrigin,
+            artistType = props.occupation,
+        )
 }

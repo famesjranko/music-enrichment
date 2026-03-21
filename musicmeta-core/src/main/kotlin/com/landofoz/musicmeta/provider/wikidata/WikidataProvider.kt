@@ -10,7 +10,9 @@ import com.landofoz.musicmeta.http.HttpClient
 import com.landofoz.musicmeta.http.RateLimiter
 
 /**
- * Provides artist photos from Wikidata's P18 (image) property.
+ * Provides artist photos and metadata from Wikidata properties.
+ * P18 = image, P569 = birth date, P570 = death date,
+ * P495 = country of origin, P106 = occupation.
  * Requires a wikidataId in the request identifiers.
  */
 class WikidataProvider(
@@ -32,6 +34,11 @@ class WikidataProvider(
             priority = PRIORITY,
             identifierRequirement = IdentifierRequirement.WIKIDATA_ID,
         ),
+        ProviderCapability(
+            type = EnrichmentType.COUNTRY,
+            priority = 50,
+            identifierRequirement = IdentifierRequirement.WIKIDATA_ID,
+        ),
     )
 
     override suspend fun enrich(
@@ -43,15 +50,26 @@ class WikidataProvider(
             return EnrichmentResult.NotFound(type, id)
         }
 
-        val imageUrl = api.getArtistImageUrl(wikidataId, imageSize)
+        val props = api.getEntityProperties(wikidataId, imageSize)
             ?: return EnrichmentResult.NotFound(type, id)
 
-        return EnrichmentResult.Success(
-            type = type,
-            data = WikidataMapper.toArtwork(imageUrl),
-            provider = id,
-            confidence = CONFIDENCE,
-        )
+        return when (type) {
+            EnrichmentType.ARTIST_PHOTO -> {
+                val imageUrl = props.imageUrl
+                    ?: return EnrichmentResult.NotFound(type, id)
+                EnrichmentResult.Success(type, WikidataMapper.toArtwork(imageUrl), id, CONFIDENCE)
+            }
+            EnrichmentType.COUNTRY -> {
+                val metadata = WikidataMapper.toMetadata(props)
+                if (metadata.country == null && metadata.beginDate == null &&
+                    metadata.endDate == null && metadata.artistType == null
+                ) {
+                    return EnrichmentResult.NotFound(type, id)
+                }
+                EnrichmentResult.Success(type, metadata, id, CONFIDENCE)
+            }
+            else -> EnrichmentResult.NotFound(type, id)
+        }
     }
 
     companion object {

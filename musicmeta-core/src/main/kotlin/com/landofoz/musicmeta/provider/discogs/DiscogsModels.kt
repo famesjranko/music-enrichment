@@ -8,3 +8,15 @@ data class DiscogsRelease(
     val coverImage: String?,
     val releaseType: String? = null,
 )
+
+data class DiscogsArtist(
+    val id: Long,
+    val name: String,
+    val members: List<DiscogsMember>,
+)
+
+data class DiscogsMember(
+    val id: Long,
+    val name: String,
+    val active: Boolean?,
+)

@@ -9,6 +9,7 @@ import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -228,6 +229,52 @@ class WikidataProviderTest {
         val result = provider.enrich(request, EnrichmentType.ARTIST_PHOTO)
 
         // Then — NotFound because P18 array length is 0
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich returns Metadata with birth and death dates from Wikidata properties`() = runTest {
+        // Given — Wikidata has P569 (birth), P570 (death), P495 (country Q30=US)
+        httpClient.givenJsonResponse("wikidata.org", """{
+            "claims": {
+                "P569": [{"mainsnak":{"datavalue":{"value":{"time":"+1968-10-07T00:00:00Z"},"type":"time"}}}],
+                "P570": [{"mainsnak":{"datavalue":{"value":{"time":"+2045-01-01T00:00:00Z"},"type":"time"}}}],
+                "P495": [{"mainsnak":{"datavalue":{"value":{"id":"Q30"},"type":"wikibase-entityid"}}}],
+                "P106": [{"mainsnak":{"datavalue":{"value":{"id":"Q177220"},"type":"wikibase-entityid"}}}]
+            }
+        }""")
+
+        val request = EnrichmentRequest.ForArtist(
+            identifiers = EnrichmentIdentifiers(wikidataId = "Q12345"),
+            name = "Test Artist",
+        )
+
+        // When — enriching for COUNTRY type
+        val result = provider.enrich(request, EnrichmentType.COUNTRY)
+
+        // Then — success with Metadata containing birth date, country, occupation
+        assertTrue(result is EnrichmentResult.Success)
+        val metadata = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertEquals("1968-10-07", metadata.beginDate)
+        assertEquals("2045-01-01", metadata.endDate)
+        assertEquals("US", metadata.country)
+        assertEquals("singer", metadata.artistType)
+    }
+
+    @Test
+    fun `enrich returns NotFound for COUNTRY when no properties present`() = runTest {
+        // Given — Wikidata returns claims with no relevant properties
+        httpClient.givenJsonResponse("wikidata.org", """{"claims":{}}""")
+
+        val request = EnrichmentRequest.ForArtist(
+            identifiers = EnrichmentIdentifiers(wikidataId = "Q99996"),
+            name = "Unknown",
+        )
+
+        // When — enriching for COUNTRY type
+        val result = provider.enrich(request, EnrichmentType.COUNTRY)
+
+        // Then — NotFound because no properties were found
         assertTrue(result is EnrichmentResult.NotFound)
     }
 }
