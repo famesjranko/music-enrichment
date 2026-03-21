@@ -56,5 +56,7 @@ class ProviderChain(
         }
     }
 
+    fun providers(): List<EnrichmentProvider> = providers
+
     fun providerCount(): Int = providers.size
 }

@@ -9,6 +9,7 @@ import com.landofoz.musicmeta.EnrichmentLogger
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderInfo
 import com.landofoz.musicmeta.SearchCandidate
 import com.landofoz.musicmeta.http.HttpClient
@@ -175,11 +176,26 @@ class DefaultEnrichmentEngine(
 
     private fun needsIdentityResolution(request: EnrichmentRequest, types: Set<EnrichmentType>): Boolean {
         val ids = request.identifiers
-        // No MBID at all — definitely need identity resolution
+        // Always need identity if we have no MBID at all (identity provider resolves it)
         if (ids.musicBrainzId == null && ids.musicBrainzReleaseGroupId == null) return true
-        // Have MBID but missing identifiers that requested types need
-        if (ids.wikidataId == null && types.contains(EnrichmentType.ARTIST_PHOTO)) return true
-        if (ids.wikipediaTitle == null && types.contains(EnrichmentType.ARTIST_BIO)) return true
+        // Check if any requested type has providers that need identifiers we're missing
+        for (type in types) {
+            val chain = registry.chainFor(type) ?: continue
+            for (provider in chain.providers()) {
+                val cap = provider.capabilities.firstOrNull { it.type == type } ?: continue
+                val missing = when (cap.identifierRequirement) {
+                    IdentifierRequirement.NONE -> false
+                    IdentifierRequirement.MUSICBRAINZ_ID -> ids.musicBrainzId == null
+                    IdentifierRequirement.MUSICBRAINZ_RELEASE_GROUP_ID -> ids.musicBrainzReleaseGroupId == null
+                    IdentifierRequirement.WIKIDATA_ID -> ids.wikidataId == null
+                    IdentifierRequirement.WIKIPEDIA_TITLE -> ids.wikipediaTitle == null && ids.wikidataId == null
+                    IdentifierRequirement.ANY_IDENTIFIER -> ids.musicBrainzId == null &&
+                        ids.musicBrainzReleaseGroupId == null &&
+                        ids.wikidataId == null && ids.wikipediaTitle == null
+                }
+                if (missing) return true
+            }
+        }
         return false
     }
 

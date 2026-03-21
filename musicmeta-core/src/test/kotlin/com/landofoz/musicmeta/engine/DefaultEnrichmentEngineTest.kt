@@ -295,19 +295,18 @@ class DefaultEnrichmentEngineTest {
         assertTrue("Identity provider should have been called", idProvider.enrichCalls.isNotEmpty())
     }
 
-    @Test fun `needsIdentityResolution skips when all providers use NONE`() = runTest {
-        // Given — identity provider + art provider with NONE requirement, request has no identifiers
+    @Test fun `needsIdentityResolution skips when all providers use NONE and MBID present`() = runTest {
+        // Given — identity provider + art provider with NONE requirement, request has MBID
         val idProvider = FakeProvider(id = "mb", isIdentityProvider = true, capabilities = listOf(ProviderCapability(EnrichmentType.GENRE, 100)))
         val artProvider = FakeProvider(id = "deezer", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100)))
             .also { it.givenResult(EnrichmentType.ALBUM_ART, art("deezer")) }
+        val reqWithMbid = EnrichmentRequest.ForAlbum(EnrichmentIdentifiers(musicBrainzId = "existing-mbid"), "Test", "Artist")
         val e = DefaultEnrichmentEngine(ProviderRegistry(listOf(idProvider, artProvider)), cache, FakeHttpClient(), EnrichmentConfig(enableIdentityResolution = true))
 
-        // When — enriching ALBUM_ART only (all providers use NONE)
-        e.enrich(EnrichmentRequest.forAlbum("Test", "Artist"), setOf(EnrichmentType.ALBUM_ART))
+        // When — enriching ALBUM_ART only (all providers use NONE, MBID present)
+        e.enrich(reqWithMbid, setOf(EnrichmentType.ALBUM_ART))
 
-        // Then — identity provider should NOT have been called (no provider needs identifiers)
-        // Note: the current hardcoded implementation would call it because no MBID is present.
-        // The data-driven approach should only call when a provider actually needs an identifier.
+        // Then — identity provider should NOT have been called (MBID present, no provider needs other identifiers)
         assertEquals("Identity provider should not have been called", 0, idProvider.enrichCalls.size)
     }
 
