@@ -58,12 +58,39 @@ class FanartTvProvider(
         }
 
         return try {
+            // For ALBUM_ART and CD_ART, try the album-specific endpoint first when available
+            if (type == EnrichmentType.ALBUM_ART || type == EnrichmentType.CD_ART) {
+                val releaseGroupMbid = request.identifiers.musicBrainzReleaseGroupId
+                if (releaseGroupMbid != null) {
+                    val albumResult = enrichAlbumArtFromAlbumEndpoint(releaseGroupMbid, type)
+                    if (albumResult != null) return albumResult
+                }
+            }
+            // Fall through to existing artist endpoint logic
             val images = api.getArtistImages(mbid)
                 ?: return EnrichmentResult.NotFound(type, id)
             enrichFromImages(images, type)
         } catch (e: Exception) {
             mapError(type, e)
         }
+    }
+
+    /**
+     * Tries to fetch album art from the Fanart.tv album-specific endpoint.
+     * Returns null to signal fall-through to the artist endpoint.
+     */
+    private suspend fun enrichAlbumArtFromAlbumEndpoint(
+        releaseGroupMbid: String,
+        type: EnrichmentType,
+    ): EnrichmentResult? {
+        val albumImages = api.getAlbumImages(releaseGroupMbid) ?: return null
+        val imageList = when (type) {
+            EnrichmentType.ALBUM_ART -> albumImages.albumCovers
+            EnrichmentType.CD_ART -> albumImages.cdArt
+            else -> return null
+        }
+        if (imageList.isEmpty()) return null
+        return success(FanartTvMapper.toArtwork(imageList.first(), imageList), type)
     }
 
     private fun enrichFromImages(

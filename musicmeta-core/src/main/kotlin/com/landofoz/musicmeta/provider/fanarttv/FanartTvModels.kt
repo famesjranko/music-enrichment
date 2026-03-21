@@ -14,3 +14,9 @@ data class FanartTvArtistImages(
     val albumCovers: List<FanartTvImage> = emptyList(),
     val cdArt: List<FanartTvImage> = emptyList(),
 )
+
+/** Album-specific images from the Fanart.tv album endpoint (/v3/music/albums/{releaseGroupMbid}). */
+data class FanartTvAlbumImages(
+    val albumCovers: List<FanartTvImage>,
+    val cdArt: List<FanartTvImage>,
+)

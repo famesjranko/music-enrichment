@@ -18,6 +18,27 @@ class FanartTvApi(
     constructor(projectKey: String, httpClient: HttpClient, rateLimiter: RateLimiter) :
         this({ projectKey }, httpClient, rateLimiter)
 
+    /**
+     * Fetches album-specific images for a release group from the Fanart.tv album endpoint.
+     * URL: /v3/music/albums/{releaseGroupMbid}
+     * Response: { "{releaseGroupMbid}": { "albumcover": [...], "cdart": [...] } }
+     * Returns null if the release group is not found or has no images.
+     */
+    suspend fun getAlbumImages(releaseGroupMbid: String): FanartTvAlbumImages? {
+        val url = "$BASE_URL/albums/$releaseGroupMbid?api_key=${projectKeyProvider()}"
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return null
+        val albumObj = json.optJSONObject(releaseGroupMbid) ?: return null
+        return FanartTvAlbumImages(
+            albumCovers = extractImages(albumObj, "albumcover"),
+            cdArt = extractImages(albumObj, "cdart"),
+        )
+    }
+
     suspend fun getArtistImages(mbid: String): FanartTvArtistImages? {
         val url = "$BASE_URL/$mbid?api_key=${projectKeyProvider()}"
         val json = rateLimiter.execute {
