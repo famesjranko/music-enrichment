@@ -12,6 +12,7 @@ sealed class EnrichmentData {
         val width: Int? = null,
         val height: Int? = null,
         val thumbnailUrl: String? = null,
+        val sizes: List<ArtworkSize>? = null,
     ) : EnrichmentData()
 
     @Serializable
@@ -58,6 +59,14 @@ sealed class EnrichmentData {
     ) : EnrichmentData()
 
 }
+
+@Serializable
+data class ArtworkSize(
+    val url: String,
+    val width: Int? = null,
+    val height: Int? = null,
+    val label: String? = null,
+)
 
 @Serializable
 data class SimilarArtist(

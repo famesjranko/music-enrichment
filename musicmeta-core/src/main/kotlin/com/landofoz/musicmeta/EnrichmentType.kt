@@ -30,4 +30,16 @@ enum class EnrichmentType(val defaultTtlMs: Long) {
     // Statistics — 7 days
     TRACK_POPULARITY(7L * 24 * 60 * 60 * 1000),
     ARTIST_POPULARITY(7L * 24 * 60 * 60 * 1000),
+
+    // Relationships
+    BAND_MEMBERS(30L * 24 * 60 * 60 * 1000),
+    SIMILAR_TRACKS(30L * 24 * 60 * 60 * 1000),
+    ARTIST_LINKS(90L * 24 * 60 * 60 * 1000),
+
+    // Additional metadata
+    ARTIST_DISCOGRAPHY(30L * 24 * 60 * 60 * 1000),
+    ALBUM_TRACKS(365L * 24 * 60 * 60 * 1000),
+
+    // Additional artwork
+    ARTIST_BANNER(90L * 24 * 60 * 60 * 1000),
 }
