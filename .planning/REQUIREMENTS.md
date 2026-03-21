@@ -17,12 +17,12 @@ Requirements for the Provider Abstraction Overhaul milestone. Each maps to roadm
 
 ### Provider Abstraction
 
-- [ ] **ABST-01**: ProviderCapability uses typed IdentifierRequirement enum instead of boolean
-- [ ] **ABST-02**: Identity resolution formalized as provider role (isIdentityProvider, resolveIdentity())
+- [x] **ABST-01**: ProviderCapability uses typed IdentifierRequirement enum instead of boolean
+- [x] **ABST-02**: Identity resolution formalized as provider role (isIdentityProvider, resolveIdentity())
 - [ ] **ABST-03**: IdentifierResolution removed from public EnrichmentData sealed class
 - [ ] **ABST-04**: Provider mapper pattern extracted (11 *Mapper.kt files)
 - [ ] **ABST-05**: Centralized ApiKeyConfig with EnrichmentEngine.Builder integration
-- [ ] **ABST-06**: needsIdentityResolution() derived from provider capabilities (not hardcoded)
+- [x] **ABST-06**: needsIdentityResolution() derived from provider capabilities (not hardcoded)
 
 ### Public API
 
@@ -83,12 +83,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUG-03 | Phase 1 | Complete |
 | BUG-04 | Phase 1 | Complete |
 | BUG-05 | Phase 1 | Complete |
-| ABST-01 | Phase 2 | Pending |
-| ABST-02 | Phase 2 | Pending |
+| ABST-01 | Phase 2 | Complete |
+| ABST-02 | Phase 2 | Complete |
 | ABST-03 | Phase 2 | Pending |
 | ABST-04 | Phase 2 | Pending |
 | ABST-05 | Phase 2 | Pending |
-| ABST-06 | Phase 2 | Pending |
+| ABST-06 | Phase 2 | Complete |
 | API-01 | Phase 3 | Pending |
 | API-02 | Phase 3 | Pending |
 | API-03 | Phase 3 | Pending |
