@@ -4,6 +4,7 @@ import com.landofoz.musicmeta.BandMember
 import com.landofoz.musicmeta.Credit
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
+import com.landofoz.musicmeta.ReleaseEdition
 
 /** Maps Discogs DTOs to EnrichmentData subclasses. */
 object DiscogsMapper {
@@ -92,6 +93,24 @@ object DiscogsMapper {
                     name = member.name,
                     identifiers = EnrichmentIdentifiers()
                         .withExtra("discogsArtistId", member.id.toString()),
+                )
+            },
+        )
+
+    fun toReleaseEditions(versions: List<DiscogsMasterVersion>): EnrichmentData.ReleaseEditions =
+        EnrichmentData.ReleaseEditions(
+            editions = versions.map { version ->
+                ReleaseEdition(
+                    title = version.title,
+                    format = version.format,
+                    country = version.country,
+                    year = version.year,
+                    label = version.label,
+                    catalogNumber = version.catno,
+                    barcode = null,
+                    identifiers = if (version.id > 0) {
+                        EnrichmentIdentifiers().withExtra("discogsReleaseId", version.id.toString())
+                    } else EnrichmentIdentifiers(),
                 )
             },
         )

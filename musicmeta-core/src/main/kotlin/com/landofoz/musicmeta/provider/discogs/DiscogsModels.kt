@@ -44,3 +44,13 @@ data class DiscogsMember(
     val name: String,
     val active: Boolean?,
 )
+
+data class DiscogsMasterVersion(
+    val id: Long,
+    val title: String,
+    val format: String?,
+    val label: String?,
+    val country: String?,
+    val year: Int?,
+    val catno: String?,
+)

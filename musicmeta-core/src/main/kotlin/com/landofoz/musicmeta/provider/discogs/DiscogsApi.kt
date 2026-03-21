@@ -61,6 +61,18 @@ class DiscogsApi(
         return parseArtist(json)
     }
 
+    /** Fetch all versions of a master release (pressings, editions). */
+    suspend fun getMasterVersions(masterId: Long): List<DiscogsMasterVersion> {
+        val url = "$MASTERS_URL/$masterId/versions?per_page=100&token=${tokenProvider()}"
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return emptyList()
+        return parseMasterVersions(json)
+    }
+
     /** Fetch release details including extraartists and tracklist. */
     suspend fun getReleaseDetails(releaseId: Long): DiscogsReleaseDetail? {
         val url = "$RELEASES_URL/$releaseId?token=${tokenProvider()}"
@@ -128,6 +140,22 @@ class DiscogsApi(
         )
     }
 
+    private fun parseMasterVersions(json: JSONObject): List<DiscogsMasterVersion> {
+        val versions = json.optJSONArray("versions") ?: return emptyList()
+        return (0 until versions.length()).map { i ->
+            val obj = versions.getJSONObject(i)
+            DiscogsMasterVersion(
+                id = obj.optLong("id", 0L),
+                title = obj.optString("title", ""),
+                format = obj.optString("format").takeIf { it.isNotBlank() },
+                label = obj.optString("label").takeIf { it.isNotBlank() },
+                country = obj.optString("country").takeIf { it.isNotBlank() },
+                year = obj.optInt("year", 0).takeIf { it > 0 },
+                catno = obj.optString("catno").takeIf { it.isNotBlank() },
+            )
+        }
+    }
+
     private fun parseReleaseResults(json: JSONObject): List<DiscogsRelease> {
         val results = json.optJSONArray("results") ?: return emptyList()
         return (0 until results.length()).map { i ->
@@ -162,5 +190,6 @@ class DiscogsApi(
         const val SEARCH_URL = "https://api.discogs.com/database/search"
         const val ARTISTS_URL = "https://api.discogs.com/artists"
         const val RELEASES_URL = "https://api.discogs.com/releases"
+        const val MASTERS_URL = "https://api.discogs.com/masters"
     }
 }

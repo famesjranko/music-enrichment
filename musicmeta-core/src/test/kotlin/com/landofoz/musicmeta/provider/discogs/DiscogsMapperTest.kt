@@ -3,6 +3,7 @@ package com.landofoz.musicmeta.provider.discogs
 import com.landofoz.musicmeta.EnrichmentData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DiscogsMapperTest {
@@ -128,5 +129,81 @@ class DiscogsMapperTest {
 
         // Then
         assertEquals(0, result.credits.size)
+    }
+
+    // toReleaseEditions tests
+
+    @Test
+    fun `toReleaseEditions maps DiscogsMasterVersion list to ReleaseEditions with correct fields`() {
+        // Given
+        val versions = listOf(
+            DiscogsMasterVersion(
+                id = 12345L,
+                title = "OK Computer",
+                format = "Vinyl, LP",
+                label = "Parlophone",
+                country = "UK",
+                year = 1997,
+                catno = "NODATA 01",
+            ),
+        )
+
+        // When
+        val result = DiscogsMapper.toReleaseEditions(versions)
+
+        // Then
+        assertTrue(result is EnrichmentData.ReleaseEditions)
+        assertEquals(1, result.editions.size)
+        val edition = result.editions[0]
+        assertEquals("OK Computer", edition.title)
+        assertEquals("Vinyl, LP", edition.format)
+        assertEquals("UK", edition.country)
+        assertEquals(1997, edition.year)
+        assertEquals("Parlophone", edition.label)
+        assertEquals("NODATA 01", edition.catalogNumber)
+        assertNull(edition.barcode)
+    }
+
+    @Test
+    fun `toReleaseEditions stores discogsReleaseId in identifiers when version id is positive`() {
+        // Given
+        val versions = listOf(
+            DiscogsMasterVersion(id = 99001L, title = "Some Album", format = null,
+                label = null, country = null, year = null, catno = null),
+        )
+
+        // When
+        val result = DiscogsMapper.toReleaseEditions(versions)
+
+        // Then
+        assertEquals("99001", result.editions[0].identifiers.get("discogsReleaseId"))
+    }
+
+    @Test
+    fun `toReleaseEditions omits discogsReleaseId when version id is 0`() {
+        // Given
+        val versions = listOf(
+            DiscogsMasterVersion(id = 0L, title = "Some Album", format = null,
+                label = null, country = null, year = null, catno = null),
+        )
+
+        // When
+        val result = DiscogsMapper.toReleaseEditions(versions)
+
+        // Then
+        assertNull(result.editions[0].identifiers.get("discogsReleaseId"))
+    }
+
+    @Test
+    fun `toReleaseEditions handles empty versions list`() {
+        // Given
+        val versions = emptyList<DiscogsMasterVersion>()
+
+        // When
+        val result = DiscogsMapper.toReleaseEditions(versions)
+
+        // Then
+        assertTrue(result is EnrichmentData.ReleaseEditions)
+        assertEquals(0, result.editions.size)
     }
 }
