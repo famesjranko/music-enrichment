@@ -4,6 +4,7 @@ import com.landofoz.musicmeta.DiscographyAlbum
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.PopularTrack
+import com.landofoz.musicmeta.SimilarArtist
 
 /** Maps ListenBrainz responses to EnrichmentData subclasses. */
 object ListenBrainzMapper {
@@ -39,6 +40,17 @@ object ListenBrainzMapper {
             listenerCount = first.totalUserCount,
         )
     }
+
+    fun toSimilarArtists(artists: List<ListenBrainzSimilarArtist>): EnrichmentData.SimilarArtists =
+        EnrichmentData.SimilarArtists(
+            artists = artists.map { artist ->
+                SimilarArtist(
+                    name = artist.name,
+                    identifiers = EnrichmentIdentifiers(musicBrainzId = artist.artistMbid),
+                    matchScore = artist.score,
+                )
+            },
+        )
 
     fun toDiscography(
         groups: List<ListenBrainzTopReleaseGroup>,

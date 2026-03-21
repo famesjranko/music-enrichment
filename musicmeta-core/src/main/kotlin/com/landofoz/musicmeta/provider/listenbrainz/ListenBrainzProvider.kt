@@ -45,6 +45,11 @@ class ListenBrainzProvider(
             priority = FALLBACK_PRIORITY,
             identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
         ),
+        ProviderCapability(
+            type = EnrichmentType.SIMILAR_ARTISTS,
+            priority = FALLBACK_PRIORITY,
+            identifierRequirement = IdentifierRequirement.MUSICBRAINZ_ID,
+        ),
     )
 
     override suspend fun enrich(
@@ -58,6 +63,7 @@ class ListenBrainzProvider(
             EnrichmentType.ARTIST_POPULARITY -> enrichArtistPopularity(mbid, type)
             EnrichmentType.TRACK_POPULARITY -> enrichTrackPopularity(mbid, type)
             EnrichmentType.ARTIST_DISCOGRAPHY -> enrichDiscography(mbid, type)
+            EnrichmentType.SIMILAR_ARTISTS -> enrichSimilarArtists(mbid, type)
             else -> EnrichmentResult.NotFound(type, id)
         }
     }
@@ -110,6 +116,19 @@ class ListenBrainzProvider(
             val groups = api.getTopReleaseGroupsForArtist(artistMbid)
             if (groups.isEmpty()) return EnrichmentResult.NotFound(type, id)
             success(ListenBrainzMapper.toDiscography(groups), type)
+        } catch (e: Exception) {
+            mapError(type, e)
+        }
+    }
+
+    private suspend fun enrichSimilarArtists(
+        artistMbid: String,
+        type: EnrichmentType,
+    ): EnrichmentResult {
+        return try {
+            val artists = api.getSimilarArtists(artistMbid)
+            if (artists.isEmpty()) return EnrichmentResult.NotFound(type, id)
+            success(ListenBrainzMapper.toSimilarArtists(artists), type)
         } catch (e: Exception) {
             mapError(type, e)
         }

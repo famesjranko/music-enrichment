@@ -29,3 +29,10 @@ data class ListenBrainzTopReleaseGroup(
     val artistName: String,
     val listenCount: Long,
 )
+
+/** A similar artist from GET /1/explore/lb-radio/artist/{mbid}/similar. */
+data class ListenBrainzSimilarArtist(
+    val artistMbid: String,
+    val name: String,
+    val score: Float,
+)
