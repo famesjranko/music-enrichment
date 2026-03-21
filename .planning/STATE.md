@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: Provider Abstraction Overhaul
 status: unknown
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-21T09:10:21.113Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-21T09:16:58.789Z"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Position
 
 Phase: 04 (New Types) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: 2 of 4
 | Phase 03-public-api-cleanup P01 | 5min | 2 tasks | 11 files |
 | Phase 03-public-api-cleanup P02 | 7min | 2 tasks | 7 files |
 | Phase 04-new-types P01 | 2min | 2 tasks | 4 files |
+| Phase 04-new-types P03 | 3min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Plan: 2 of 4
 - [Phase 03-public-api-cleanup]: EnrichmentIdentifiers extended with extra map, get(), withExtra() for extensible provider IDs; @Serializable added for data class embedding
 - [Phase 03-public-api-cleanup]: ErrorKind.UNKNOWN default preserves all existing Error construction sites; fetchJsonResult has no retry logic
 - [Phase 04-new-types]: Supporting data classes (BandMember, DiscographyAlbum, etc.) placed as top-level @Serializable types consistent with existing SimilarArtist/PopularTrack pattern
+- [Phase 04-new-types]: Deezer uses search-then-fetch pattern: searchArtist for ID, then getArtistAlbums/getAlbumTracks by ID; Deezer IDs stored in identifiers.extra
+- [Phase 04-new-types]: Last.fm SIMILAR_TRACKS type check handled before ForArtist cast, allowing ForTrack requests for this type only
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:10:21.111Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-21T09:16:58.786Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None

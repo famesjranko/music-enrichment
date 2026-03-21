@@ -81,7 +81,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — New EnrichmentType values, EnrichmentData subclasses, ArtworkSize, serialization tests
 - [ ] 04-02-PLAN.md — MusicBrainz: BAND_MEMBERS, ARTIST_DISCOGRAPHY, ALBUM_TRACKS, ARTIST_LINKS capabilities
-- [ ] 04-03-PLAN.md — Deezer discography/tracks, Last.fm similar tracks, Fanart.tv artist banner
+- [x] 04-03-PLAN.md — Deezer discography/tracks, Last.fm similar tracks, Fanart.tv artist banner
 - [ ] 04-04-PLAN.md — Artwork sizes for 4 providers, Wikidata expanded properties, Discogs band members
 
 ### Phase 5: Deepening
@@ -106,5 +106,5 @@ Plans:
 | 1. Bug Fixes | 2/2 | Complete | 2026-03-21 |
 | 2. Provider Abstraction | 0/3 | Not started | - |
 | 3. Public API Cleanup | 0/2 | Not started | - |
-| 4. New Types | 0/4 | Not started | - |
+| 4. New Types | 2/4 | In Progress|  |
 | 5. Deepening | 0/TBD | Not started | - |
