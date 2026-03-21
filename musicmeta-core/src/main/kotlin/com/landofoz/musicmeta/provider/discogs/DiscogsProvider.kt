@@ -5,6 +5,7 @@ import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.ErrorKind
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.engine.ArtistMatcher
 import com.landofoz.musicmeta.engine.ConfidenceCalculator
@@ -65,8 +66,17 @@ class DiscogsProvider(
                 ?: return EnrichmentResult.NotFound(type, id)
             enrichFromRelease(release, type)
         } catch (e: Exception) {
-            EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
+            mapError(type, e)
         }
+    }
+
+    private fun mapError(type: EnrichmentType, e: Exception): EnrichmentResult.Error {
+        val kind = when (e) {
+            is java.io.IOException -> ErrorKind.NETWORK
+            is org.json.JSONException -> ErrorKind.PARSE
+            else -> ErrorKind.UNKNOWN
+        }
+        return EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e, kind)
     }
 
     private suspend fun enrichBandMembers(
@@ -83,7 +93,7 @@ class DiscogsProvider(
             }
             success(DiscogsMapper.toBandMembers(artist), type)
         } catch (e: Exception) {
-            EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e)
+            mapError(type, e)
         }
     }
 

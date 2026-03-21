@@ -1,6 +1,7 @@
 package com.landofoz.musicmeta.provider.discogs
 
 import com.landofoz.musicmeta.http.HttpClient
+import com.landofoz.musicmeta.http.HttpResult
 import com.landofoz.musicmeta.http.RateLimiter
 import org.json.JSONObject
 import java.net.URLEncoder
@@ -23,7 +24,12 @@ class DiscogsApi(
         val encodedArtist = URLEncoder.encode(artist, "UTF-8")
         val url = "$SEARCH_URL?type=release&title=$encodedTitle" +
             "&artist=$encodedArtist&per_page=$limit&token=${tokenProvider()}"
-        val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return emptyList()
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return emptyList()
         return parseReleaseResults(json)
     }
 
@@ -31,7 +37,12 @@ class DiscogsApi(
     suspend fun searchArtist(name: String): Long? {
         val encoded = URLEncoder.encode(name, "UTF-8")
         val url = "$SEARCH_URL?type=artist&q=$encoded&per_page=1&token=${tokenProvider()}"
-        val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return null
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return null
         val results = json.optJSONArray("results") ?: return null
         if (results.length() == 0) return null
         val id = results.getJSONObject(0).optLong("id", 0L)
@@ -41,7 +52,12 @@ class DiscogsApi(
     /** Fetch artist details including band members. */
     suspend fun getArtist(artistId: Long): DiscogsArtist? {
         val url = "$ARTISTS_URL/$artistId?token=${tokenProvider()}"
-        val json = rateLimiter.execute { httpClient.fetchJson(url) } ?: return null
+        val json = rateLimiter.execute {
+            when (val r = httpClient.fetchJsonResult(url)) {
+                is HttpResult.Ok -> r.body
+                else -> return@execute null
+            }
+        } ?: return null
         return parseArtist(json)
     }
 

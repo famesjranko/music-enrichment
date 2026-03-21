@@ -4,6 +4,7 @@ import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.ErrorKind
 import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
@@ -262,6 +263,24 @@ class DiscogsProviderTest {
 
         // Then — NotFound
         assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    @Test
+    fun `enrich returns Error with ErrorKind NETWORK when network fails`() = runTest {
+        // Given — Discogs API throws an IOException
+        httpClient.givenIoException("discogs.com")
+        val request = EnrichmentRequest.forAlbum(
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When — enriching for album art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then — Error with NETWORK kind
+        assertTrue(result is EnrichmentResult.Error)
+        val error = result as EnrichmentResult.Error
+        assertEquals(ErrorKind.NETWORK, error.errorKind)
     }
 
     private companion object {

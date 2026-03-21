@@ -5,6 +5,7 @@ import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.ErrorKind
 import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
@@ -303,5 +304,24 @@ class ListenBrainzProviderTest {
         val popularity = (result as EnrichmentResult.Success).data as EnrichmentData.Popularity
         assertEquals(1, popularity.topTracks!!.size)
         assertEquals(0L, popularity.topTracks!![0].listenCount)
+    }
+
+    @Test
+    fun `enrich returns Error with ErrorKind NETWORK when network fails`() = runTest {
+        // Given — ListenBrainz API throws an IOException
+        httpClient.givenIoException("listenbrainz.org")
+        val artistMbid = "a74b1b7f-71a5-4011-9441-d0b5e4122711"
+        val request = EnrichmentRequest.ForArtist(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = artistMbid),
+            name = "Radiohead",
+        )
+
+        // When — enriching for artist popularity
+        val result = provider.enrich(request, EnrichmentType.ARTIST_POPULARITY)
+
+        // Then — Error with NETWORK kind
+        assertTrue(result is EnrichmentResult.Error)
+        val error = result as EnrichmentResult.Error
+        assertEquals(ErrorKind.NETWORK, error.errorKind)
     }
 }

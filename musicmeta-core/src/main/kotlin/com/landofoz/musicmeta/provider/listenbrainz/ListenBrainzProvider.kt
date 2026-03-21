@@ -4,6 +4,7 @@ import com.landofoz.musicmeta.EnrichmentProvider
 import com.landofoz.musicmeta.EnrichmentRequest
 import com.landofoz.musicmeta.EnrichmentResult
 import com.landofoz.musicmeta.EnrichmentType
+import com.landofoz.musicmeta.ErrorKind
 import com.landofoz.musicmeta.IdentifierRequirement
 import com.landofoz.musicmeta.ProviderCapability
 import com.landofoz.musicmeta.engine.ConfidenceCalculator
@@ -55,27 +56,44 @@ class ListenBrainzProvider(
         }
     }
 
+    private fun mapError(type: EnrichmentType, e: Exception): EnrichmentResult.Error {
+        val kind = when (e) {
+            is java.io.IOException -> ErrorKind.NETWORK
+            is org.json.JSONException -> ErrorKind.PARSE
+            else -> ErrorKind.UNKNOWN
+        }
+        return EnrichmentResult.Error(type, id, e.message ?: "Unknown error", e, kind)
+    }
+
     private suspend fun enrichArtistPopularity(
         artistMbid: String,
         type: EnrichmentType,
     ): EnrichmentResult {
-        val artists = api.getArtistPopularity(listOf(artistMbid))
-        if (artists.isNotEmpty()) {
-            return success(ListenBrainzMapper.toArtistPopularity(artists), type)
+        return try {
+            val artists = api.getArtistPopularity(listOf(artistMbid))
+            if (artists.isNotEmpty()) {
+                return success(ListenBrainzMapper.toArtistPopularity(artists), type)
+            }
+            // Fall back to existing top-recordings approach
+            val tracks = api.getTopRecordingsForArtist(artistMbid)
+            if (tracks.isEmpty()) return EnrichmentResult.NotFound(type, id)
+            success(ListenBrainzMapper.toPopularity(tracks), type)
+        } catch (e: Exception) {
+            mapError(type, e)
         }
-        // Fall back to existing top-recordings approach
-        val tracks = api.getTopRecordingsForArtist(artistMbid)
-        if (tracks.isEmpty()) return EnrichmentResult.NotFound(type, id)
-        return success(ListenBrainzMapper.toPopularity(tracks), type)
     }
 
     private suspend fun enrichTrackPopularity(
         recordingMbid: String,
         type: EnrichmentType,
     ): EnrichmentResult {
-        val recordings = api.getRecordingPopularity(listOf(recordingMbid))
-        if (recordings.isEmpty()) return EnrichmentResult.NotFound(type, id)
-        return success(ListenBrainzMapper.toTrackPopularity(recordings), type)
+        return try {
+            val recordings = api.getRecordingPopularity(listOf(recordingMbid))
+            if (recordings.isEmpty()) return EnrichmentResult.NotFound(type, id)
+            success(ListenBrainzMapper.toTrackPopularity(recordings), type)
+        } catch (e: Exception) {
+            mapError(type, e)
+        }
     }
 
     private fun success(

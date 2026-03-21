@@ -1,6 +1,7 @@
 package com.landofoz.musicmeta.provider.listenbrainz
 
 import com.landofoz.musicmeta.http.HttpClient
+import com.landofoz.musicmeta.http.HttpResult
 import com.landofoz.musicmeta.http.RateLimiter
 import org.json.JSONArray
 import org.json.JSONObject
@@ -18,8 +19,10 @@ class ListenBrainzApi(
         artistMbid: String,
     ): List<ListenBrainzPopularTrack> = rateLimiter.execute {
         val url = "$BASE_URL/popularity/top-recordings-for-artist/$artistMbid"
-        val jsonArray = httpClient.fetchJsonArray(url)
-            ?: return@execute emptyList()
+        val jsonArray = when (val r = httpClient.fetchJsonArrayResult(url)) {
+            is HttpResult.Ok -> r.body
+            else -> return@execute emptyList()
+        }
         parseRecordings(jsonArray)
     }
 
@@ -28,8 +31,10 @@ class ListenBrainzApi(
         recordingMbids: List<String>,
     ): List<ListenBrainzRecordingPopularity> = rateLimiter.execute {
         val body = JSONObject().put("recording_mbids", JSONArray(recordingMbids)).toString()
-        val jsonArray = httpClient.postJsonArray("$BASE_URL/popularity/recording", body)
-            ?: return@execute emptyList()
+        val jsonArray = when (val r = httpClient.postJsonArrayResult("$BASE_URL/popularity/recording", body)) {
+            is HttpResult.Ok -> r.body
+            else -> return@execute emptyList()
+        }
         parseRecordingPopularity(jsonArray)
     }
 
@@ -38,8 +43,10 @@ class ListenBrainzApi(
         artistMbids: List<String>,
     ): List<ListenBrainzArtistPopularity> = rateLimiter.execute {
         val body = JSONObject().put("artist_mbids", JSONArray(artistMbids)).toString()
-        val jsonArray = httpClient.postJsonArray("$BASE_URL/popularity/artist", body)
-            ?: return@execute emptyList()
+        val jsonArray = when (val r = httpClient.postJsonArrayResult("$BASE_URL/popularity/artist", body)) {
+            is HttpResult.Ok -> r.body
+            else -> return@execute emptyList()
+        }
         parseArtistPopularity(jsonArray)
     }
 
@@ -48,8 +55,10 @@ class ListenBrainzApi(
         artistMbid: String,
     ): List<ListenBrainzTopReleaseGroup> = rateLimiter.execute {
         val url = "$BASE_URL/popularity/top-release-groups-for-artist/$artistMbid"
-        val jsonArray = httpClient.fetchJsonArray(url)
-            ?: return@execute emptyList()
+        val jsonArray = when (val r = httpClient.fetchJsonArrayResult(url)) {
+            is HttpResult.Ok -> r.body
+            else -> return@execute emptyList()
+        }
         parseTopReleaseGroups(jsonArray)
     }
 
