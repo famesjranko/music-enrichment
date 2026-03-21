@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 11-provider-coverage-expansion/11-01-PLAN.md
-last_updated: "2026-03-21T18:20:28.360Z"
+stopped_at: Completed 11-provider-coverage-expansion/11-03-PLAN.md
+last_updated: "2026-03-21T18:20:56.204Z"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -55,6 +55,8 @@ Plan: 3 of 3
 | Phase 10-genre-enhancement P02 | 197s | 2 tasks | 8 files |
 | Phase 10-genre-enhancement P03 | 174s | 2 tasks | 4 files |
 | Phase 11-provider-coverage-expansion P01 | 18 | 2 tasks | 11 files |
+| Phase 11-provider-coverage-expansion P02 | 398s | 1 tasks | 5 files |
+| Phase 11-provider-coverage-expansion P03 | 396 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -99,6 +101,10 @@ Plan: 3 of 3
 - [Phase 11-provider-coverage-expansion]: Last.fm ALBUM_METADATA guard placed before ForArtist cast, matching SIMILAR_TRACKS/TRACK_POPULARITY dispatch pattern in LastFmProvider
 - [Phase 11-provider-coverage-expansion]: enrichAlbumMetadataWithCommunity fetches release details only when releaseId is available - no extra API calls when ID absent
 - [Phase 11-provider-coverage-expansion]: FakeHttpClient URL key specificity: use database/search instead of discogs.com when also registering a releases ID response to avoid match order collision
+- [Phase 11-provider-coverage-expansion]: iTunes ALBUM_TRACKS uses id-first lookup (itunesCollectionId) with search fallback; ARTIST_DISCOGRAPHY requires searchArtist() or stored itunesArtistId
+- [Phase 11-provider-coverage-expansion]: ITunesAlbumResult reused for discography lookup results (wrapperType==collection filter) — no separate artist album model needed
+- [Phase 11-provider-coverage-expansion]: [Phase 11-03]: Fanart.tv album-first strategy uses null-return EnrichmentResult? to signal fall-through to artist endpoint cleanly
+- [Phase 11-provider-coverage-expansion]: [Phase 11-03]: ListenBrainz similar-artists uses fetchJsonResult (not fetchJsonArrayResult) because /explore/lb-radio endpoint wraps array in payload object
 
 ### Pending Todos
 
@@ -110,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T18:20:18.039Z
-Stopped at: Completed 11-provider-coverage-expansion/11-01-PLAN.md
+Last session: 2026-03-21T18:20:56.201Z
+Stopped at: Completed 11-provider-coverage-expansion/11-03-PLAN.md
 Resume file: None
