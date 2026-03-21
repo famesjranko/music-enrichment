@@ -22,7 +22,7 @@ Consumers get comprehensive, accurate music metadata from a single `enrich()` ca
 
 ## Current State
 
-Shipped v0.4.0 with 12,261 LOC Kotlin. 25 enrichment types across 11 providers. All providers use typed identifier requirements, formalized identity resolution, mapper pattern, and standardized confidence scoring.
+Shipped v0.4.0, Phase 6 tech debt complete. All 11 providers use HttpResult/ErrorKind uniformly. ListenBrainz ARTIST_DISCOGRAPHY wired. Discogs stores release/master IDs for downstream phases.
 
 ## Requirements
 
@@ -38,13 +38,12 @@ Shipped v0.4.0 with 12,261 LOC Kotlin. 25 enrichment types across 11 providers. 
 - v0.4.0: 6 new enrichment types (BAND_MEMBERS, ARTIST_DISCOGRAPHY, ALBUM_TRACKS, SIMILAR_TRACKS, ARTIST_BANNER, ARTIST_LINKS)
 - v0.4.0: Artwork sizes, back cover/booklet art, album metadata deepening
 - v0.4.0: Track-level popularity fix, ListenBrainz batch endpoints, ConfidenceCalculator
+- v0.5.0-Phase6: HttpResult migration across all 11 provider APIs (27+ call sites)
+- v0.5.0-Phase6: ErrorKind adoption with mapError() across all 11 providers
+- v0.5.0-Phase6: ListenBrainz ARTIST_DISCOGRAPHY capability wired at priority 50
+- v0.5.0-Phase6: Discogs release/master ID storage in resolvedIdentifiers.extra
 
 ### Active
-
-- [ ] HttpResult migration across all 11 provider APIs
-- [ ] ErrorKind adoption across all 11 providers
-- [ ] ListenBrainz ARTIST_DISCOGRAPHY capability wiring
-- [ ] Discogs release/master ID storage
 - [ ] CREDITS enrichment type (MusicBrainz + Discogs)
 - [ ] RELEASE_EDITIONS enrichment type (MusicBrainz + Discogs)
 - [ ] ARTIST_TIMELINE composite enrichment type
@@ -102,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-22 after v0.5.0 milestone started*
+*Last updated: 2026-03-22 after Phase 6 completion*
