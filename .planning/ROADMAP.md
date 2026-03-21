@@ -44,7 +44,11 @@ Plans:
   4. Each of the 11 providers has a corresponding *Mapper.kt file; no provider directly constructs EnrichmentData subclasses inline
   5. EnrichmentEngine.Builder accepts apiKeys(ApiKeyConfig) and withDefaultProviders() constructs all providers from it
   6. needsIdentityResolution() is derived from provider capability declarations, not from a hardcoded type list
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — Typed IdentifierRequirement enum, identity provider formalization, data-driven needsIdentityResolution
+- [ ] 02-02-PLAN.md — Remove IdentifierResolution from EnrichmentData, rework identity resolution pathway
+- [ ] 02-03-PLAN.md — Extract 11 mapper files, add ApiKeyConfig and Builder.withDefaultProviders()
 
 ### Phase 3: Public API Cleanup
 **Goal**: Public types are clean, extensible, and free of provider-specific leaks so consumers interact with a stable surface
@@ -91,8 +95,8 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Bug Fixes | 0/2 | Not started | - |
-| 2. Provider Abstraction | 0/TBD | Not started | - |
+| 1. Bug Fixes | 2/2 | Complete | 2026-03-21 |
+| 2. Provider Abstraction | 0/3 | Not started | - |
 | 3. Public API Cleanup | 0/TBD | Not started | - |
 | 4. New Types | 0/TBD | Not started | - |
 | 5. Deepening | 0/TBD | Not started | - |
