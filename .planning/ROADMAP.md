@@ -48,7 +48,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Typed IdentifierRequirement enum, identity provider formalization, data-driven needsIdentityResolution
 - [x] 02-02-PLAN.md — Remove IdentifierResolution from EnrichmentData, rework identity resolution pathway
-- [ ] 02-03-PLAN.md — Extract 11 mapper files, add ApiKeyConfig and Builder.withDefaultProviders()
+- [x] 02-03-PLAN.md — Extract 11 mapper files, add ApiKeyConfig and Builder.withDefaultProviders()
 
 ### Phase 3: Public API Cleanup
 **Goal**: Public types are clean, extensible, and free of provider-specific leaks so consumers interact with a stable surface
