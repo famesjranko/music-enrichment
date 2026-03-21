@@ -63,7 +63,7 @@ Plans:
 
 Plans:
 - [x] 07-01-PLAN.md — CREDITS data model + MusicBrainz recording credits (API, parser, mapper, provider)
-- [ ] 07-02-PLAN.md — Discogs release details credits (API, models, mapper, provider)
+- [x] 07-02-PLAN.md — Discogs release details credits (API, models, mapper, provider)
 
 ### Phase 8: Release Editions
 **Goal**: Consumers can list all known editions and pressings of an album via a single RELEASE_EDITIONS enrichment type backed by MusicBrainz and Discogs

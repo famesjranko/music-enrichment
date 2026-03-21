@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 07-credits-personnel/07-01-PLAN.md
-last_updated: "2026-03-21T16:41:57.434Z"
+stopped_at: Completed 07-credits-personnel/07-02-PLAN.md
+last_updated: "2026-03-21T16:47:26.924Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -46,6 +46,7 @@ Plan: 2 of 2
 | Phase 06-tech-debt-cleanup P02 | 15 | 2 tasks | 9 files |
 | Phase 06-tech-debt-cleanup P04 | 15 | 2 tasks | 6 files |
 | Phase 07-credits-personnel P01 | 25 | 2 tasks | 10 files |
+| Phase 07-credits-personnel P02 | 20 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ Plan: 2 of 2
 - [Phase 07-credits-personnel]: lookupRecording returns raw JSONObject to avoid bloating MusicBrainzRecording with optional relation fields only present during lookup
 - [Phase 07-credits-personnel]: enrichTrackCredits dispatched via type-check guard at top of enrichTrack, consistent with enrichAlbumTracks pattern
 - [Phase 07-credits-personnel]: Work-rel composer/lyricist/arranger extracted from nested work.relations when top-level rel is performance/work; mapArtistRelType/mapWorkRelType helpers centralize role-to-category mapping
+- [Phase 07-credits-personnel]: DiscogsCredit id uses Long? with takeIf { it > 0 } — same 0-means-absent convention as masterId in Phase 6
+- [Phase 07-credits-personnel]: parseCreditsArray extracted as private helper shared by release-level and track-level extraartists parsing
+- [Phase 07-credits-personnel]: CREDITS dispatch guard in enrich() placed before album-type cast, consistent with BAND_MEMBERS guard pattern
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T16:41:57.432Z
-Stopped at: Completed 07-credits-personnel/07-01-PLAN.md
+Last session: 2026-03-21T16:47:26.922Z
+Stopped at: Completed 07-credits-personnel/07-02-PLAN.md
 Resume file: None
