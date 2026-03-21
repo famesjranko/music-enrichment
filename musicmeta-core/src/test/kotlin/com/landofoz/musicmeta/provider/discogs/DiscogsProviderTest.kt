@@ -224,7 +224,65 @@ class DiscogsProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns album metadata with catalog number, genres, styles`() = runTest {
+        // Given — Discogs returns search results with extra metadata fields
+        httpClient.givenJsonResponse("discogs.com", METADATA_SEARCH_JSON)
+        val request = EnrichmentRequest.forAlbum(
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — success with Metadata containing catalogNumber, genres, label, country
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertEquals("NODATA 02", data.catalogNumber)
+        assertEquals("Parlophone", data.label)
+        assertEquals("UK", data.country)
+        assertEquals("1997", data.releaseDate)
+        assertTrue(data.genres!!.contains("Electronic"))
+        assertTrue(data.genres!!.contains("Rock"))
+        assertTrue(data.genres!!.contains("Art Rock"))
+    }
+
+    @Test
+    fun `enrich returns NotFound for album metadata when no results`() = runTest {
+        // Given — Discogs returns empty results
+        httpClient.givenJsonResponse("discogs.com", EMPTY_RESULTS_JSON)
+        val request = EnrichmentRequest.forAlbum(
+            title = "Nonexistent",
+            artist = "Nobody",
+        )
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — NotFound
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     private companion object {
+        val METADATA_SEARCH_JSON = """
+            {
+              "results": [
+                {
+                  "title": "Radiohead - OK Computer",
+                  "label": ["Parlophone"],
+                  "year": "1997",
+                  "country": "UK",
+                  "cover_image": "https://img.discogs.com/cover.jpg",
+                  "type": "release",
+                  "catno": "NODATA 02",
+                  "genre": ["Electronic", "Rock"],
+                  "style": ["Art Rock"]
+                }
+              ]
+            }
+        """.trimIndent()
+
         val ARTIST_SEARCH_JSON = """
             {"results":[{"id":12345,"name":"Radiohead"}]}
         """.trimIndent()

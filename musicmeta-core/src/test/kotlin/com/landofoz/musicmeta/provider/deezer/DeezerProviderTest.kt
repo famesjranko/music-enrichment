@@ -186,7 +186,51 @@ class DeezerProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns album metadata from search result`() = runTest {
+        // Given — Deezer API returns album with metadata fields
+        httpClient.givenJsonResponse("api.deezer.com", DEEZER_METADATA_RESPONSE)
+        val request = EnrichmentRequest.forAlbum("OK Computer", "Radiohead")
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — success with Metadata containing trackCount, explicit, releaseType
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertEquals(12, data.trackCount)
+        assertEquals(false, data.explicit)
+        assertEquals("album", data.releaseType)
+    }
+
+    @Test
+    fun `enrich returns NotFound for album metadata when no results`() = runTest {
+        // Given — Deezer API returns empty data
+        httpClient.givenJsonResponse("api.deezer.com", """{"data":[]}""")
+        val request = EnrichmentRequest.forAlbum("Nonexistent", "Nobody")
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — NotFound
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     companion object {
+        val DEEZER_METADATA_RESPONSE = """
+            {"data":[{
+                "title":"OK Computer",
+                "artist":{"name":"Radiohead"},
+                "cover_small":"https://e-cdns-images.dzcdn.net/images/cover/small.jpg",
+                "cover_medium":"https://e-cdns-images.dzcdn.net/images/cover/medium.jpg",
+                "cover_big":"https://e-cdns-images.dzcdn.net/images/cover/big.jpg",
+                "cover_xl":"https://e-cdns-images.dzcdn.net/images/cover/xl.jpg",
+                "nb_tracks":12,
+                "record_type":"album",
+                "explicit_lyrics":false
+            }]}
+        """.trimIndent()
+
         val ARTIST_ALBUMS_RESPONSE = """
             {"data":[
                 {"id":6575,"title":"OK Computer","release_date":"1997-06-16","record_type":"album","cover_small":"https://img.dz/small.jpg","cover_medium":"https://img.dz/medium.jpg"},

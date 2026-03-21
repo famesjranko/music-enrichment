@@ -20,6 +20,7 @@ enum class EnrichmentType(val defaultTtlMs: Long) {
     RELEASE_DATE(365L * 24 * 60 * 60 * 1000),
     RELEASE_TYPE(365L * 24 * 60 * 60 * 1000),
     COUNTRY(365L * 24 * 60 * 60 * 1000),
+    ALBUM_METADATA(90L * 24 * 60 * 60 * 1000),
     SIMILAR_ARTISTS(30L * 24 * 60 * 60 * 1000),
 
     // Text content

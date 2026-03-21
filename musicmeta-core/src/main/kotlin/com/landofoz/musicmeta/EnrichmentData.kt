@@ -28,6 +28,10 @@ sealed class EnrichmentData {
         val beginDate: String? = null,
         val endDate: String? = null,
         val isrc: String? = null,
+        val trackCount: Int? = null,
+        val explicit: Boolean? = null,
+        val catalogNumber: String? = null,
+        val communityRating: Float? = null,
     ) : EnrichmentData()
 
     @Serializable

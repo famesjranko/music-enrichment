@@ -138,7 +138,49 @@ class ITunesProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns album metadata with trackCount and genre`() = runTest {
+        // Given — iTunes API returns result with trackCount and genre
+        httpClient.givenJsonResponse("itunes.apple.com", ITUNES_METADATA_RESPONSE)
+        val request = EnrichmentRequest.forAlbum("OK Computer", "Radiohead")
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — success with Metadata containing trackCount, genres, country, releaseDate
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Metadata
+        assertEquals(12, data.trackCount)
+        assertEquals(listOf("Alternative"), data.genres)
+        assertEquals("USA", data.country)
+    }
+
+    @Test
+    fun `enrich returns NotFound for album metadata when no results`() = runTest {
+        // Given — iTunes API returns empty results
+        httpClient.givenJsonResponse("itunes.apple.com", """{"resultCount":0,"results":[]}""")
+        val request = EnrichmentRequest.forAlbum("Nonexistent", "Nobody")
+
+        // When — enriching for album metadata
+        val result = provider.enrich(request, EnrichmentType.ALBUM_METADATA)
+
+        // Then — NotFound
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
     companion object {
+        val ITUNES_METADATA_RESPONSE = """
+            {"resultCount":1,"results":[{
+                "collectionName":"OK Computer",
+                "artistName":"Radiohead",
+                "artworkUrl100":"https://is1-ssl.mzstatic.com/image/thumb/Music/100x100bb.jpg",
+                "releaseDate":"1997-06-16T07:00:00Z",
+                "primaryGenreName":"Alternative",
+                "country":"USA",
+                "trackCount":12
+            }]}
+        """.trimIndent()
+
         val ITUNES_RESPONSE = """
             {"resultCount":1,"results":[{
                 "collectionName":"OK Computer",
