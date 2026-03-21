@@ -53,6 +53,7 @@ object MusicBrainzParser {
             disambiguation = obj.optString("disambiguation").takeIf { it.isNotBlank() },
             score = obj.optInt("score", defaultScore),
             hasFrontCover = extractHasFrontCover(obj),
+            tracks = parseMedia(obj),
         )
 
     private fun parseArtistObject(obj: JSONObject, defaultScore: Int = 0): MusicBrainzArtist {
@@ -69,6 +70,8 @@ object MusicBrainzParser {
             wikidataId = extractWikidataId(obj),
             wikipediaTitle = extractWikipediaTitle(obj),
             score = obj.optInt("score", defaultScore),
+            urlRelations = parseUrlRelations(obj),
+            bandMembers = parseBandMembers(obj),
         )
     }
 
@@ -80,6 +83,84 @@ object MusicBrainzParser {
             tags = extractTags(obj),
             score = obj.optInt("score", 0),
         )
+
+    /** Parse band members from artist-rels in an artist lookup response. */
+    fun parseBandMembers(json: JSONObject): List<MusicBrainzBandMember> {
+        val relations = json.optJSONArray("relations") ?: return emptyList()
+        val members = mutableListOf<MusicBrainzBandMember>()
+        for (i in 0 until relations.length()) {
+            val rel = relations.getJSONObject(i)
+            if (rel.optString("type") != "member of band") continue
+            val artist = rel.optJSONObject("artist") ?: continue
+            val attrs = rel.optJSONArray("attributes")
+            val role = attrs?.let { if (it.length() > 0) it.getString(0) else null }
+            members.add(
+                MusicBrainzBandMember(
+                    name = artist.getString("name"),
+                    id = artist.optString("id").takeIf { it.isNotBlank() },
+                    role = role,
+                    beginDate = rel.optString("begin").takeIf { it.isNotBlank() },
+                    endDate = rel.optString("end").takeIf { it.isNotBlank() },
+                    ended = rel.optBoolean("ended", false),
+                ),
+            )
+        }
+        return members
+    }
+
+    /** Parse release groups from a browse response. */
+    fun parseReleaseGroups(json: JSONObject): List<MusicBrainzReleaseGroup> {
+        val groups = json.optJSONArray("release-groups") ?: return emptyList()
+        return (0 until groups.length()).map { i ->
+            val obj = groups.getJSONObject(i)
+            MusicBrainzReleaseGroup(
+                id = obj.getString("id"),
+                title = obj.getString("title"),
+                primaryType = obj.optString("primary-type").takeIf { it.isNotBlank() },
+                firstReleaseDate = obj.optString("first-release-date").takeIf { it.isNotBlank() },
+            )
+        }
+    }
+
+    /** Parse tracks from media array in a release lookup response. */
+    fun parseMedia(json: JSONObject): List<MusicBrainzTrack> {
+        val media = json.optJSONArray("media") ?: return emptyList()
+        val tracks = mutableListOf<MusicBrainzTrack>()
+        for (m in 0 until media.length()) {
+            val medium = media.getJSONObject(m)
+            val trackList = medium.optJSONArray("tracks") ?: continue
+            for (t in 0 until trackList.length()) {
+                val track = trackList.getJSONObject(t)
+                val recordingId = track.optJSONObject("recording")
+                    ?.optString("id")?.takeIf { it.isNotBlank() }
+                tracks.add(
+                    MusicBrainzTrack(
+                        title = track.getString("title"),
+                        position = track.getInt("position"),
+                        lengthMs = track.optLong("length", 0L).takeIf { it > 0 },
+                        id = recordingId ?: track.optString("id").takeIf { it.isNotBlank() },
+                    ),
+                )
+            }
+        }
+        return tracks
+    }
+
+    /** Parse URL relations from an artist lookup, excluding wikidata and wikipedia. */
+    fun parseUrlRelations(json: JSONObject): List<MusicBrainzUrlRelation> {
+        val relations = json.optJSONArray("relations") ?: return emptyList()
+        val excluded = setOf("wikidata", "wikipedia")
+        val result = mutableListOf<MusicBrainzUrlRelation>()
+        for (i in 0 until relations.length()) {
+            val rel = relations.getJSONObject(i)
+            if (rel.optString("target-type") != "url") continue
+            val type = rel.optString("type").takeIf { it.isNotBlank() } ?: continue
+            if (type in excluded) continue
+            val url = rel.optJSONObject("url")?.optString("resource") ?: continue
+            result.add(MusicBrainzUrlRelation(type = type, url = url))
+        }
+        return result
+    }
 
     internal fun extractArtistCredit(obj: JSONObject): String? {
         val credits = obj.optJSONArray("artist-credit") ?: return null

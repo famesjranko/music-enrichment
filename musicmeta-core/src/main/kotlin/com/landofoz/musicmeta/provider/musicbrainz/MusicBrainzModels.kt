@@ -16,6 +16,7 @@ data class MusicBrainzRelease(
     val disambiguation: String?,
     val score: Int,
     val hasFrontCover: Boolean = false,
+    val tracks: List<MusicBrainzTrack> = emptyList(),
 )
 
 data class MusicBrainzArtist(
@@ -30,6 +31,8 @@ data class MusicBrainzArtist(
     val wikidataId: String?,
     val wikipediaTitle: String?,
     val score: Int,
+    val urlRelations: List<MusicBrainzUrlRelation> = emptyList(),
+    val bandMembers: List<MusicBrainzBandMember> = emptyList(),
 )
 
 data class MusicBrainzRecording(
@@ -38,4 +41,32 @@ data class MusicBrainzRecording(
     val isrcs: List<String>,
     val tags: List<String>,
     val score: Int,
+)
+
+data class MusicBrainzBandMember(
+    val name: String,
+    val id: String?,
+    val role: String?,
+    val beginDate: String?,
+    val endDate: String?,
+    val ended: Boolean,
+)
+
+data class MusicBrainzReleaseGroup(
+    val id: String,
+    val title: String,
+    val primaryType: String?,
+    val firstReleaseDate: String?,
+)
+
+data class MusicBrainzTrack(
+    val title: String,
+    val position: Int,
+    val lengthMs: Long?,
+    val id: String?,
+)
+
+data class MusicBrainzUrlRelation(
+    val type: String,
+    val url: String,
 )

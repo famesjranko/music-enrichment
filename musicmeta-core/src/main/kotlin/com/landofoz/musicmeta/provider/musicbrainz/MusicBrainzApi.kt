@@ -52,7 +52,7 @@ class MusicBrainzApi(
         val json = rateLimiter.execute {
             httpClient.fetchJson(
                 "$BASE_URL/release/$mbid?fmt=json" +
-                    "&inc=artist-credits+labels+release-groups+tags",
+                    "&inc=artist-credits+labels+release-groups+tags+media+recordings",
             )
         } ?: return null
         return MusicBrainzParser.parseLookupRelease(json)
@@ -63,6 +63,28 @@ class MusicBrainzApi(
             httpClient.fetchJson("$BASE_URL/artist/$mbid?fmt=json&inc=tags+url-rels")
         } ?: return null
         return MusicBrainzParser.parseLookupArtist(json)
+    }
+
+    /** Lookup artist with artist-rels included (needed for band member relationships). */
+    suspend fun lookupArtistWithRels(mbid: String): MusicBrainzArtist? {
+        val json = rateLimiter.execute {
+            httpClient.fetchJson("$BASE_URL/artist/$mbid?fmt=json&inc=tags+url-rels+artist-rels")
+        } ?: return null
+        return MusicBrainzParser.parseLookupArtist(json)
+    }
+
+    /** Browse release groups for an artist (for discography). */
+    suspend fun browseReleaseGroups(
+        artistMbid: String,
+        limit: Int = 100,
+    ): List<MusicBrainzReleaseGroup> {
+        val json = rateLimiter.execute {
+            httpClient.fetchJson(
+                "$BASE_URL/release-group?artist=$artistMbid" +
+                    "&type=album|ep|single&fmt=json&limit=$limit",
+            )
+        } ?: return emptyList()
+        return MusicBrainzParser.parseReleaseGroups(json)
     }
 
     /** Build a Lucene query with two fields and URL-encode the ENTIRE thing. */
