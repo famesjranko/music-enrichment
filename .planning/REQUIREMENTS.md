@@ -43,9 +43,9 @@ Requirements for v0.5.0 milestone. Each maps to roadmap phases.
 ### Provider Coverage
 
 - [x] **PROV-01**: Last.fm album.getinfo provides ALBUM_METADATA at priority 40
-- [ ] **PROV-02**: iTunes lookup endpoints provide ALBUM_TRACKS and ARTIST_DISCOGRAPHY at priority 30
-- [ ] **PROV-03**: Fanart.tv album-specific endpoint for faster ALBUM_ART lookup
-- [ ] **PROV-04**: ListenBrainz similar artists provides SIMILAR_ARTISTS at priority 50
+- [x] **PROV-02**: iTunes lookup endpoints provide ALBUM_TRACKS and ARTIST_DISCOGRAPHY at priority 30
+- [x] **PROV-03**: Fanart.tv album-specific endpoint for faster ALBUM_ART lookup
+- [x] **PROV-04**: ListenBrainz similar artists provides SIMILAR_ARTISTS at priority 50
 - [x] **PROV-05**: Discogs release details deepened with community ratings and collector signals
 
 ## Future Requirements
@@ -89,9 +89,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GENR-03 | Phase 10 | Complete |
 | GENR-04 | Phase 10 | Complete |
 | PROV-01 | Phase 11 | Complete |
-| PROV-02 | Phase 11 | Pending |
-| PROV-03 | Phase 11 | Pending |
-| PROV-04 | Phase 11 | Pending |
+| PROV-02 | Phase 11 | Complete |
+| PROV-03 | Phase 11 | Complete |
+| PROV-04 | Phase 11 | Complete |
 | PROV-05 | Phase 11 | Complete |
 
 **Coverage:**
