@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: New Capabilities & Tech Debt Cleanup
 status: unknown
-stopped_at: Completed 07-credits-personnel/07-02-PLAN.md
-last_updated: "2026-03-21T16:50:59.077Z"
+stopped_at: Completed 08-release-editions/08-01-PLAN.md
+last_updated: "2026-03-21T17:04:24.792Z"
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Consumers get comprehensive, accurate music metadata from a single enrich() call without knowing which APIs exist, how they authenticate, or how to correlate identifiers across services.
-**Current focus:** Phase 07 — Credits & Personnel
+**Current focus:** Phase 08 — Release Editions
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
+Phase: 08 (Release Editions) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: Not started
 | Phase 06-tech-debt-cleanup P04 | 15 | 2 tasks | 6 files |
 | Phase 07-credits-personnel P01 | 25 | 2 tasks | 10 files |
 | Phase 07-credits-personnel P02 | 20 | 2 tasks | 5 files |
+| Phase 08-release-editions P01 | 4 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Plan: Not started
 - [Phase 07-credits-personnel]: DiscogsCredit id uses Long? with takeIf { it > 0 } — same 0-means-absent convention as masterId in Phase 6
 - [Phase 07-credits-personnel]: parseCreditsArray extracted as private helper shared by release-level and track-level extraartists parsing
 - [Phase 07-credits-personnel]: CREDITS dispatch guard in enrich() placed before album-type cast, consistent with BAND_MEMBERS guard pattern
+- [Phase 08-release-editions]: lookupReleaseGroup returns raw JSONObject (same pattern as lookupRecording) — release sub-structures are complex and only needed for editions
+- [Phase 08-release-editions]: RELEASE_EDITIONS dispatch guard placed after ALBUM_TRACKS guard in enrichAlbum, consistent with existing pattern
+- [Phase 08-release-editions]: parseReleaseGroupDetail extracts format from media[0].format and label/catalogNumber from label-info[0] — first medium and first label only
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T16:47:26.922Z
-Stopped at: Completed 07-credits-personnel/07-02-PLAN.md
+Last session: 2026-03-21T17:04:24.790Z
+Stopped at: Completed 08-release-editions/08-01-PLAN.md
 Resume file: None

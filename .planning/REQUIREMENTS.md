@@ -23,8 +23,8 @@ Requirements for v0.5.0 milestone. Each maps to roadmap phases.
 
 ### Editions
 
-- [ ] **EDIT-01**: User can list all editions/pressings of an album via RELEASE_EDITIONS type
-- [ ] **EDIT-02**: MusicBrainz provides editions from release-group releases at priority 100
+- [x] **EDIT-01**: User can list all editions/pressings of an album via RELEASE_EDITIONS type
+- [x] **EDIT-02**: MusicBrainz provides editions from release-group releases at priority 100
 - [ ] **EDIT-03**: Discogs provides editions from master versions at priority 50
 
 ### Timeline
@@ -78,8 +78,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CRED-02 | Phase 7 | Complete |
 | CRED-03 | Phase 7 | Complete |
 | CRED-04 | Phase 7 | Complete |
-| EDIT-01 | Phase 8 | Pending |
-| EDIT-02 | Phase 8 | Pending |
+| EDIT-01 | Phase 8 | Complete |
+| EDIT-02 | Phase 8 | Complete |
 | EDIT-03 | Phase 8 | Pending |
 | TIME-01 | Phase 9 | Pending |
 | TIME-02 | Phase 9 | Pending |
