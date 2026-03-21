@@ -255,6 +255,95 @@ class FanartTvProviderTest {
         assertEquals("fanarttv", result.provider)
     }
 
+    @Test
+    fun `enrich ALBUM_ART uses album endpoint when releaseGroupMbid available`() = runTest {
+        // Given -- request with both artist MBID and release group MBID
+        httpClient.givenJsonResponse("/albums/", ALBUM_ENDPOINT_JSON)
+        val request = albumRequest()
+
+        // When -- enriching for ALBUM_ART
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then -- Success from album endpoint (URL contains /albums/)
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertEquals("https://fanart.tv/album-cover.jpg", data.url)
+        assertTrue(httpClient.requestedUrls.any { it.contains("/albums/") })
+    }
+
+    @Test
+    fun `enrich ALBUM_ART falls back to artist endpoint when album endpoint returns null`() = runTest {
+        // Given -- album endpoint configured to error (returns null), artist endpoint responds
+        httpClient.givenError("/albums/")
+        httpClient.givenJsonResponse("fanart.tv", ALBUM_VIA_ARTIST_JSON)
+        val request = albumRequest()
+
+        // When -- enriching for ALBUM_ART
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then -- Success from artist endpoint fallback
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertEquals("https://assets.fanart.tv/fanart/album-cover-artist.jpg", data.url)
+    }
+
+    @Test
+    fun `enrich ALBUM_ART uses artist endpoint when no releaseGroupMbid`() = runTest {
+        // Given -- request with only musicBrainzId (artist), no releaseGroupMbid
+        httpClient.givenJsonResponse("fanart.tv", ALBUM_VIA_ARTIST_JSON)
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "artist-mbid"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for ALBUM_ART
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then -- Success from artist endpoint (no album endpoint called)
+        assertTrue(result is EnrichmentResult.Success)
+        assertTrue(httpClient.requestedUrls.none { it.contains("/albums/") })
+    }
+
+    @Test
+    fun `enrich CD_ART uses album endpoint when releaseGroupMbid available`() = runTest {
+        // Given -- request with both artist MBID and release group MBID
+        httpClient.givenJsonResponse("/albums/", ALBUM_ENDPOINT_JSON)
+        val request = albumRequest()
+
+        // When -- enriching for CD_ART
+        val result = provider.enrich(request, EnrichmentType.CD_ART)
+
+        // Then -- Success from album endpoint
+        assertTrue(result is EnrichmentResult.Success)
+        val data = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertEquals("https://fanart.tv/cd-art.jpg", data.url)
+        assertTrue(httpClient.requestedUrls.any { it.contains("/albums/") })
+    }
+
+    @Test
+    fun `enrich ALBUM_ART returns NotFound when both endpoints return nothing`() = runTest {
+        // Given -- both endpoints return null/empty
+        httpClient.givenError("/albums/")
+        httpClient.givenJsonResponse("fanart.tv", EMPTY_IMAGES_JSON)
+        val request = albumRequest()
+
+        // When -- enriching for ALBUM_ART
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then -- NotFound because both endpoints have no album covers
+        assertTrue(result is EnrichmentResult.NotFound)
+    }
+
+    private fun albumRequest() = EnrichmentRequest.ForAlbum(
+        identifiers = EnrichmentIdentifiers(
+            musicBrainzId = "artist-mbid",
+            musicBrainzReleaseGroupId = "rg-mbid",
+        ),
+        title = "OK Computer",
+        artist = "Radiohead",
+    )
+
     private companion object {
         val MULTI_THUMB_JSON = """
             {
@@ -291,6 +380,25 @@ class FanartTvProviderTest {
               "artistbackground": [],
               "hdmusiclogo": [],
               "musicbanner": []
+            }
+        """.trimIndent()
+
+        val ALBUM_ENDPOINT_JSON = """
+            {"rg-mbid": {"albumcover": [{"url": "https://fanart.tv/album-cover.jpg", "id": "1", "likes": "5"}], "cdart": [{"url": "https://fanart.tv/cd-art.jpg", "id": "2", "likes": "3"}]}}
+        """.trimIndent()
+
+        val ALBUM_VIA_ARTIST_JSON = """
+            {
+              "artistthumb": [],
+              "artistbackground": [],
+              "hdmusiclogo": [],
+              "musicbanner": [],
+              "albums": {
+                "rg-mbid": {
+                  "albumcover": [{"url": "https://assets.fanart.tv/fanart/album-cover-artist.jpg", "id": "10", "likes": "2"}],
+                  "cdart": []
+                }
+              }
             }
         """.trimIndent()
     }
