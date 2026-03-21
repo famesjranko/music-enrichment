@@ -9,6 +9,7 @@ import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -187,6 +188,56 @@ class CoverArtArchiveProviderTest {
         assertTrue(result is EnrichmentResult.Success)
         val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
         assertEquals("", artwork.url)
+    }
+
+    @Test
+    fun `enrich returns artwork with sizes from metadata endpoint`() = runTest {
+        // Given -- CAA has front cover and JSON metadata with thumbnails
+        // Register specific redirect keys FIRST so they match before the general key
+        httpClient.givenJsonResponse(
+            "release/sizes-rel/front-1200",
+            "https://archive.org/image/sizes-rel-1200.jpg",
+        )
+        httpClient.givenJsonResponse(
+            "release/sizes-rel/front-250",
+            "https://archive.org/image/sizes-rel-250.jpg",
+        )
+        // Metadata endpoint (no /front-* suffix). FakeHttpClient uses firstOrNull,
+        // so the more specific front-* keys above match redirect calls first.
+        httpClient.givenJsonResponse(
+            "release/sizes-rel",
+            """{
+                "images": [
+                    {
+                        "front": true,
+                        "image": "https://archive.org/image/sizes-rel-full.jpg",
+                        "thumbnails": {
+                            "250": "https://archive.org/image/sizes-rel-250.jpg",
+                            "500": "https://archive.org/image/sizes-rel-500.jpg",
+                            "1200": "https://archive.org/image/sizes-rel-1200.jpg",
+                            "small": "https://archive.org/image/sizes-rel-small.jpg",
+                            "large": "https://archive.org/image/sizes-rel-large.jpg"
+                        }
+                    }
+                ]
+            }""",
+        )
+        val request = EnrichmentRequest.ForAlbum(
+            identifiers = EnrichmentIdentifiers(musicBrainzId = "sizes-rel"),
+            title = "OK Computer",
+            artist = "Radiohead",
+        )
+
+        // When -- enriching for album art
+        val result = provider.enrich(request, EnrichmentType.ALBUM_ART)
+
+        // Then -- returns artwork with populated sizes list
+        assertTrue(result is EnrichmentResult.Success)
+        val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertNotNull(artwork.sizes)
+        assertTrue(artwork.sizes!!.size >= 2)
+        assertTrue(artwork.sizes!!.any { it.label == "250" })
+        assertTrue(artwork.sizes!!.any { it.label == "1200" })
     }
 
     @Test

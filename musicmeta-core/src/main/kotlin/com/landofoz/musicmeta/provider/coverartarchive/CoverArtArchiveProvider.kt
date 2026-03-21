@@ -63,9 +63,10 @@ class CoverArtArchiveProvider(
             val url = api.getArtworkUrl(releaseId, artworkSize)
             if (url != null) {
                 val thumbUrl = api.getArtworkUrl(releaseId, thumbnailSize)
+                val frontImage = fetchFrontImage(releaseId)
                 return EnrichmentResult.Success(
                     type = type,
-                    data = CoverArtArchiveMapper.toArtwork(url, thumbUrl),
+                    data = CoverArtArchiveMapper.toArtwork(url, thumbUrl, frontImage),
                     provider = id,
                     confidence = 1.0f,
                 )
@@ -87,6 +88,12 @@ class CoverArtArchiveProvider(
         }
 
         return EnrichmentResult.NotFound(type, id)
+    }
+
+    /** Fetch image metadata for sizes. Returns the first front image, or null. */
+    private suspend fun fetchFrontImage(releaseId: String): CoverArtArchiveImage? {
+        val metadata = api.getArtworkMetadata(releaseId) ?: return null
+        return metadata.images.firstOrNull { it.front }
     }
 
     companion object {

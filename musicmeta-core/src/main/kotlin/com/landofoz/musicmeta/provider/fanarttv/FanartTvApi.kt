@@ -24,31 +24,37 @@ class FanartTvApi(
     }
 
     private fun parseArtistImages(json: JSONObject): FanartTvArtistImages {
-        // Album images are nested inside "albums" → {mbid} → "albumcover"/"cdart"
-        val albumCovers = mutableListOf<String>()
-        val cdArt = mutableListOf<String>()
+        // Album images are nested inside "albums" -> {mbid} -> "albumcover"/"cdart"
+        val albumCovers = mutableListOf<FanartTvImage>()
+        val cdArt = mutableListOf<FanartTvImage>()
         val albums = json.optJSONObject("albums")
         if (albums != null) {
             for (key in albums.keys()) {
                 val album = albums.optJSONObject(key) ?: continue
-                albumCovers.addAll(extractUrls(album, "albumcover"))
-                cdArt.addAll(extractUrls(album, "cdart"))
+                albumCovers.addAll(extractImages(album, "albumcover"))
+                cdArt.addAll(extractImages(album, "cdart"))
             }
         }
         return FanartTvArtistImages(
-            thumbnails = extractUrls(json, "artistthumb"),
-            backgrounds = extractUrls(json, "artistbackground"),
-            logos = extractUrls(json, "hdmusiclogo"),
-            banners = extractUrls(json, "musicbanner"),
+            thumbnails = extractImages(json, "artistthumb"),
+            backgrounds = extractImages(json, "artistbackground"),
+            logos = extractImages(json, "hdmusiclogo"),
+            banners = extractImages(json, "musicbanner"),
             albumCovers = albumCovers,
             cdArt = cdArt,
         )
     }
 
-    private fun extractUrls(json: JSONObject, key: String): List<String> {
+    private fun extractImages(json: JSONObject, key: String): List<FanartTvImage> {
         val array = json.optJSONArray(key) ?: return emptyList()
         return (0 until array.length()).mapNotNull { i ->
-            array.getJSONObject(i).optString("url").takeIf { it.isNotBlank() }
+            val obj = array.getJSONObject(i)
+            val url = obj.optString("url").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            FanartTvImage(
+                url = url,
+                id = obj.optString("id").takeIf { it.isNotBlank() },
+                likes = obj.optString("likes", "0").toIntOrNull() ?: 0,
+            )
         }
     }
 

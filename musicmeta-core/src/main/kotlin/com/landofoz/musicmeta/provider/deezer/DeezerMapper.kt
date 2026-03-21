@@ -1,5 +1,6 @@
 package com.landofoz.musicmeta.provider.deezer
 
+import com.landofoz.musicmeta.ArtworkSize
 import com.landofoz.musicmeta.DiscographyAlbum
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
@@ -13,7 +14,17 @@ object DeezerMapper {
         val url = result.coverXl ?: result.coverBig
             ?: result.coverMedium ?: result.coverSmall
             ?: return null
-        return EnrichmentData.Artwork(url = url, thumbnailUrl = result.coverMedium)
+        val sizes = listOfNotNull(
+            result.coverSmall?.let { ArtworkSize(url = it, width = 56, height = 56, label = "small") },
+            result.coverMedium?.let { ArtworkSize(url = it, width = 250, height = 250, label = "medium") },
+            result.coverBig?.let { ArtworkSize(url = it, width = 500, height = 500, label = "big") },
+            result.coverXl?.let { ArtworkSize(url = it, width = 1000, height = 1000, label = "xl") },
+        )
+        return EnrichmentData.Artwork(
+            url = url,
+            thumbnailUrl = result.coverMedium,
+            sizes = sizes.takeIf { it.isNotEmpty() },
+        )
     }
 
     fun toDiscography(albums: List<DeezerArtistAlbum>): EnrichmentData.Discography =

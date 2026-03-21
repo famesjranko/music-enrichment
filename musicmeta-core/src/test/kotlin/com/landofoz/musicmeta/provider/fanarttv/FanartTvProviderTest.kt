@@ -9,6 +9,8 @@ import com.landofoz.musicmeta.http.RateLimiter
 import com.landofoz.musicmeta.testutil.FakeHttpClient
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -205,7 +207,51 @@ class FanartTvProviderTest {
         assertTrue(result is EnrichmentResult.NotFound)
     }
 
+    @Test
+    fun `enrich returns artwork with sizes when multiple images exist`() = runTest {
+        // Given -- Fanart.tv returns multiple thumbnails for an artist
+        httpClient.givenJsonResponse("fanart.tv", MULTI_THUMB_JSON)
+        val request = artistRequest()
+
+        // When -- enriching for artist photo
+        val result = provider.enrich(request, EnrichmentType.ARTIST_PHOTO)
+
+        // Then -- artwork has sizes list with all image variants
+        assertTrue(result is EnrichmentResult.Success)
+        val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertEquals("https://assets.fanart.tv/fanart/thumb1.jpg", artwork.url)
+        assertNotNull(artwork.sizes)
+        assertEquals(3, artwork.sizes!!.size)
+    }
+
+    @Test
+    fun `enrich returns artwork without sizes when single image`() = runTest {
+        // Given -- Fanart.tv returns a single thumbnail
+        httpClient.givenJsonResponse("fanart.tv", ARTIST_IMAGES_JSON)
+        val request = artistRequest()
+
+        // When -- enriching for artist photo
+        val result = provider.enrich(request, EnrichmentType.ARTIST_PHOTO)
+
+        // Then -- artwork has no sizes (only 1 image, not worth listing)
+        assertTrue(result is EnrichmentResult.Success)
+        val artwork = (result as EnrichmentResult.Success).data as EnrichmentData.Artwork
+        assertNull(artwork.sizes)
+    }
+
     private companion object {
+        val MULTI_THUMB_JSON = """
+            {
+              "artistthumb": [
+                {"url": "https://assets.fanart.tv/fanart/thumb1.jpg", "id": "100", "likes": "5"},
+                {"url": "https://assets.fanart.tv/fanart/thumb2.jpg", "id": "101", "likes": "3"},
+                {"url": "https://assets.fanart.tv/fanart/thumb3.jpg", "id": "102", "likes": "1"}
+              ],
+              "artistbackground": [],
+              "hdmusiclogo": []
+            }
+        """.trimIndent()
+
         val BANNER_IMAGES_JSON = """
             {
               "artistthumb": [],

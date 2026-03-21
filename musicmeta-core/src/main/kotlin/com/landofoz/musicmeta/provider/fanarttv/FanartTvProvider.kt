@@ -68,16 +68,17 @@ class FanartTvProvider(
         images: FanartTvArtistImages,
         type: EnrichmentType,
     ): EnrichmentResult {
-        val url = when (type) {
-            EnrichmentType.ARTIST_PHOTO -> images.thumbnails.firstOrNull()
-            EnrichmentType.ARTIST_BACKGROUND -> images.backgrounds.firstOrNull()
-            EnrichmentType.ARTIST_LOGO -> images.logos.firstOrNull()
-            EnrichmentType.ALBUM_ART -> images.albumCovers.firstOrNull()
-            EnrichmentType.CD_ART -> images.cdArt.firstOrNull()
-            EnrichmentType.ARTIST_BANNER -> images.banners.firstOrNull()
+        val imageList = when (type) {
+            EnrichmentType.ARTIST_PHOTO -> images.thumbnails
+            EnrichmentType.ARTIST_BACKGROUND -> images.backgrounds
+            EnrichmentType.ARTIST_LOGO -> images.logos
+            EnrichmentType.ALBUM_ART -> images.albumCovers
+            EnrichmentType.CD_ART -> images.cdArt
+            EnrichmentType.ARTIST_BANNER -> images.banners
             else -> null
         } ?: return EnrichmentResult.NotFound(type, id)
-        return success(FanartTvMapper.toArtwork(url), type)
+        val image = imageList.firstOrNull() ?: return EnrichmentResult.NotFound(type, id)
+        return success(FanartTvMapper.toArtwork(image, imageList), type)
     }
 
     private fun success(data: EnrichmentData, type: EnrichmentType) = EnrichmentResult.Success(

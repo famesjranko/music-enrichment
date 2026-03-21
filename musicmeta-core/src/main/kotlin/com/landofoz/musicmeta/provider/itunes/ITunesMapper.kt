@@ -1,5 +1,6 @@
 package com.landofoz.musicmeta.provider.itunes
 
+import com.landofoz.musicmeta.ArtworkSize
 import com.landofoz.musicmeta.EnrichmentData
 import com.landofoz.musicmeta.EnrichmentIdentifiers
 import com.landofoz.musicmeta.SearchCandidate
@@ -10,7 +11,15 @@ object ITunesMapper {
     fun toArtwork(result: ITunesAlbumResult, artworkSize: Int): EnrichmentData.Artwork? {
         val artworkUrl = result.artworkUrl ?: return null
         val highResUrl = artworkUrl.replace("100x100bb", "${artworkSize}x${artworkSize}bb")
-        return EnrichmentData.Artwork(url = highResUrl, thumbnailUrl = artworkUrl)
+        val sizes = listOf(250, 500, 1000, 3000).map { size ->
+            ArtworkSize(
+                url = artworkUrl.replace("100x100bb", "${size}x${size}bb"),
+                width = size,
+                height = size,
+                label = "${size}px",
+            )
+        }
+        return EnrichmentData.Artwork(url = highResUrl, thumbnailUrl = artworkUrl, sizes = sizes)
     }
 
     fun toSearchCandidate(

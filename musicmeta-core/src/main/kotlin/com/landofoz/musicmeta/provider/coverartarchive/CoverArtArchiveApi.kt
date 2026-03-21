@@ -1,10 +1,11 @@
 package com.landofoz.musicmeta.provider.coverartarchive
 
 import com.landofoz.musicmeta.http.HttpClient
+import org.json.JSONObject
 
 /**
- * Cover Art Archive API client. Checks artwork availability via redirect URLs.
- * CAA endpoints return 307 redirects to archive.org for existing artwork.
+ * Cover Art Archive API client. Checks artwork availability via redirect URLs
+ * and fetches image metadata (thumbnails/sizes) from the JSON endpoint.
  */
 class CoverArtArchiveApi(
     private val httpClient: HttpClient,
@@ -28,6 +29,35 @@ class CoverArtArchiveApi(
         return httpClient.fetchRedirectUrl(url)
     }
 
+    /**
+     * Fetch full image metadata for a release, including thumbnail sizes.
+     * Returns the list of images with their thumbnails, or null on error.
+     */
+    suspend fun getArtworkMetadata(releaseId: String): CoverArtArchiveImageList? {
+        val url = "$BASE_URL/release/$releaseId"
+        val json = httpClient.fetchJson(url) ?: return null
+        return parseImageList(json)
+    }
+
+    private fun parseImageList(json: JSONObject): CoverArtArchiveImageList {
+        val imagesArray = json.optJSONArray("images") ?: return CoverArtArchiveImageList(emptyList())
+        val images = (0 until imagesArray.length()).mapNotNull { i ->
+            val obj = imagesArray.optJSONObject(i) ?: return@mapNotNull null
+            val front = obj.optBoolean("front", false)
+            val imageUrl = obj.optString("image", "").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val thumbsObj = obj.optJSONObject("thumbnails")
+            val thumbnails = mutableMapOf<String, String>()
+            if (thumbsObj != null) {
+                for (key in thumbsObj.keys()) {
+                    val value = thumbsObj.optString(key, "").takeIf { it.isNotBlank() }
+                    if (value != null) thumbnails[key] = value
+                }
+            }
+            CoverArtArchiveImage(front = front, url = imageUrl, thumbnails = thumbnails)
+        }
+        return CoverArtArchiveImageList(images)
+    }
+
     /** Build a canonical CAA URL without checking availability. */
     fun buildReleaseUrl(releaseId: String, size: Int = 1200): String =
         "$BASE_URL/release/$releaseId/front-$size"
@@ -40,3 +70,11 @@ class CoverArtArchiveApi(
         const val BASE_URL = "https://coverartarchive.org"
     }
 }
+
+data class CoverArtArchiveImageList(val images: List<CoverArtArchiveImage>)
+
+data class CoverArtArchiveImage(
+    val front: Boolean,
+    val url: String,
+    val thumbnails: Map<String, String>,
+)

@@ -1,10 +1,16 @@
 package com.landofoz.musicmeta.provider.fanarttv
 
+data class FanartTvImage(
+    val url: String,
+    val id: String? = null,
+    val likes: Int = 0,
+)
+
 data class FanartTvArtistImages(
-    val thumbnails: List<String>,
-    val backgrounds: List<String>,
-    val logos: List<String>,
-    val banners: List<String>,
-    val albumCovers: List<String> = emptyList(),
-    val cdArt: List<String> = emptyList(),
+    val thumbnails: List<FanartTvImage>,
+    val backgrounds: List<FanartTvImage>,
+    val logos: List<FanartTvImage>,
+    val banners: List<FanartTvImage>,
+    val albumCovers: List<FanartTvImage> = emptyList(),
+    val cdArt: List<FanartTvImage> = emptyList(),
 )
