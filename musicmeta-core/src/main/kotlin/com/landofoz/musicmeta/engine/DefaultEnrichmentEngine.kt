@@ -54,7 +54,7 @@ class DefaultEnrichmentEngine(
 
         for ((type, result) in results) {
             if (result is EnrichmentResult.Success) {
-                cache.put(entityKeyFor(request, type), type, result, ttlFor(type))
+                cache.put(entityKeyFor(request, type), type, result, config.ttlOverrides[type] ?: type.defaultTtlMs)
             }
         }
         return results
@@ -228,14 +228,5 @@ class DefaultEnrichmentEngine(
             return "$prefix:$id:$type"
         }
 
-        fun ttlFor(type: EnrichmentType): Long = when (type) {
-            EnrichmentType.ALBUM_ART, EnrichmentType.ARTIST_LOGO, EnrichmentType.CD_ART,
-            EnrichmentType.GENRE, EnrichmentType.LYRICS_SYNCED, EnrichmentType.LYRICS_PLAIN -> 90L * 24 * 60 * 60 * 1000
-            EnrichmentType.ARTIST_PHOTO, EnrichmentType.ARTIST_BACKGROUND,
-            EnrichmentType.SIMILAR_ARTISTS, EnrichmentType.ARTIST_BIO -> 30L * 24 * 60 * 60 * 1000
-            EnrichmentType.LABEL, EnrichmentType.RELEASE_DATE, EnrichmentType.RELEASE_TYPE,
-            EnrichmentType.COUNTRY -> 365L * 24 * 60 * 60 * 1000
-            EnrichmentType.TRACK_POPULARITY, EnrichmentType.ARTIST_POPULARITY -> 7L * 24 * 60 * 60 * 1000
-        }
     }
 }

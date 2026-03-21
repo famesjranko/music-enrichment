@@ -323,6 +323,55 @@ class DefaultEnrichmentEngineTest {
         assertEquals("Identity provider should not have been called", 0, idProvider.enrichCalls.size)
     }
 
+    // --- TTL on EnrichmentType ---
+
+    @Test fun `EnrichmentType ALBUM_ART has 90-day default TTL`() {
+        assertEquals(7_776_000_000L, EnrichmentType.ALBUM_ART.defaultTtlMs)
+    }
+
+    @Test fun `EnrichmentType TRACK_POPULARITY has 7-day default TTL`() {
+        assertEquals(604_800_000L, EnrichmentType.TRACK_POPULARITY.defaultTtlMs)
+    }
+
+    @Test fun `EnrichmentType LABEL has 365-day default TTL`() {
+        assertEquals(31_536_000_000L, EnrichmentType.LABEL.defaultTtlMs)
+    }
+
+    @Test fun `EnrichmentType ARTIST_PHOTO has 30-day default TTL`() {
+        assertEquals(2_592_000_000L, EnrichmentType.ARTIST_PHOTO.defaultTtlMs)
+    }
+
+    @Test fun `engine uses ttlOverrides when configured`() = runTest {
+        // Given — provider returns successful art result, config has TTL override
+        val p = FakeProvider(id = "p", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("p")) }
+        val overrideConfig = EnrichmentConfig(
+            enableIdentityResolution = false,
+            ttlOverrides = mapOf(EnrichmentType.ALBUM_ART to 999_000L),
+        )
+        val e = DefaultEnrichmentEngine(ProviderRegistry(listOf(p)), cache, FakeHttpClient(), overrideConfig)
+
+        // When — enriching
+        e.enrich(req, setOf(EnrichmentType.ALBUM_ART))
+
+        // Then — cache received the overridden TTL
+        val key = DefaultEnrichmentEngine.entityKeyFor(req, EnrichmentType.ALBUM_ART)
+        assertEquals(999_000L, cache.storedTtls["$key:${EnrichmentType.ALBUM_ART}"])
+    }
+
+    @Test fun `engine falls back to type defaultTtlMs without override`() = runTest {
+        // Given — provider returns successful art result, no TTL override
+        val p = FakeProvider(id = "p", capabilities = listOf(ProviderCapability(EnrichmentType.ALBUM_ART, 100)))
+            .also { it.givenResult(EnrichmentType.ALBUM_ART, art("p")) }
+
+        // When — enriching
+        engine(p).enrich(req, setOf(EnrichmentType.ALBUM_ART))
+
+        // Then — cache received the type's default TTL (90 days)
+        val key = DefaultEnrichmentEngine.entityKeyFor(req, EnrichmentType.ALBUM_ART)
+        assertEquals(EnrichmentType.ALBUM_ART.defaultTtlMs, cache.storedTtls["$key:${EnrichmentType.ALBUM_ART}"])
+    }
+
     // --- Confidence overrides ---
 
     @Test fun `confidence override replaces provider hardcoded value`() = runTest {

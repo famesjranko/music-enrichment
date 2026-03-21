@@ -17,6 +17,8 @@ package com.landofoz.musicmeta
  *   inner key = enrichment type, value = priority (higher = tried first).
  *   Overrides the provider's built-in priority for chain ordering.
  *   Example: `mapOf("deezer" to mapOf(EnrichmentType.ALBUM_ART to 90))`
+ * @param ttlOverrides Per-type TTL overrides in milliseconds. Overrides
+ *   [EnrichmentType.defaultTtlMs] when present.
  */
 data class EnrichmentConfig(
     val minConfidence: Float = DEFAULT_MIN_CONFIDENCE,
@@ -25,6 +27,7 @@ data class EnrichmentConfig(
     val enrichTimeoutMs: Long = DEFAULT_ENRICH_TIMEOUT_MS,
     val confidenceOverrides: Map<String, Float> = emptyMap(),
     val priorityOverrides: Map<String, Map<EnrichmentType, Int>> = emptyMap(),
+    val ttlOverrides: Map<EnrichmentType, Long> = emptyMap(),
 ) {
     companion object {
         const val DEFAULT_MIN_CONFIDENCE = 0.5f

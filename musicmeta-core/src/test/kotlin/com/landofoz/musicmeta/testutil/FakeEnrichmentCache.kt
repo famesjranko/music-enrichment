@@ -6,10 +6,11 @@ import com.landofoz.musicmeta.EnrichmentType
 
 class FakeEnrichmentCache : EnrichmentCache {
     val stored = mutableMapOf<String, EnrichmentResult.Success>()
+    val storedTtls = mutableMapOf<String, Long>()
     private val manualSelections = mutableSetOf<String>()
 
     override suspend fun get(entityKey: String, type: EnrichmentType) = stored["$entityKey:$type"]
-    override suspend fun put(entityKey: String, type: EnrichmentType, result: EnrichmentResult.Success, ttlMs: Long) { stored["$entityKey:$type"] = result }
+    override suspend fun put(entityKey: String, type: EnrichmentType, result: EnrichmentResult.Success, ttlMs: Long) { stored["$entityKey:$type"] = result; storedTtls["$entityKey:$type"] = ttlMs }
     override suspend fun invalidate(entityKey: String, type: EnrichmentType?) {
         if (type != null) stored.remove("$entityKey:$type") else stored.keys.removeAll { it.startsWith("$entityKey:") }
     }
