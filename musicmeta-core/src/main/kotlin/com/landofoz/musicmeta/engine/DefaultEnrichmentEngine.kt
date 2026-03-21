@@ -46,7 +46,7 @@ class DefaultEnrichmentEngine(
                     resolveIdentity(request, results, uncachedTypes)
                 } else request
 
-                results.putAll(resolveTypes(enrichedRequest, uncachedTypes))
+                results.putAll(resolveTypes(enrichedRequest, uncachedTypes, results))
             }
         } catch (_: TimeoutCancellationException) {
             logger.warn(TAG, "Enrich timed out after ${config.enrichTimeoutMs}ms, returning partial results")
@@ -159,14 +159,64 @@ class DefaultEnrichmentEngine(
     private suspend fun resolveTypes(
         request: EnrichmentRequest,
         types: Set<EnrichmentType>,
+        identityResults: Map<EnrichmentType, EnrichmentResult> = emptyMap(),
     ): Map<EnrichmentType, EnrichmentResult> = coroutineScope {
-        types.map { type ->
+        val compositeTypes = types.filter { it in COMPOSITE_DEPENDENCIES }
+        val standardTypes = types - compositeTypes.toSet()
+
+        // Composite types need sub-type resolution first
+        val compositeSubTypes = compositeTypes
+            .flatMap { COMPOSITE_DEPENDENCIES[it] ?: emptySet() }
+            .toSet() - standardTypes
+
+        // Resolve standard types + composite sub-types concurrently
+        val allToResolve = standardTypes + compositeSubTypes
+        val resolved = allToResolve.map { type ->
             async {
                 val chain = registry.chainFor(type)
                 val result = chain?.resolve(request) ?: EnrichmentResult.NotFound(type, "no_provider")
                 type to filterByConfidence(result)
             }
-        }.awaitAll().toMap()
+        }.awaitAll().toMap().toMutableMap()
+
+        // Synthesize composite types from resolved sub-types
+        for (compositeType in compositeTypes) {
+            resolved[compositeType] = synthesizeComposite(compositeType, resolved, identityResults)
+        }
+
+        // Only return types the caller requested — exclude internal sub-types
+        resolved.filterKeys { it in types }
+    }
+
+    private fun synthesizeComposite(
+        type: EnrichmentType,
+        resolved: Map<EnrichmentType, EnrichmentResult>,
+        identityResults: Map<EnrichmentType, EnrichmentResult>,
+    ): EnrichmentResult {
+        return when (type) {
+            EnrichmentType.ARTIST_TIMELINE -> synthesizeTimeline(resolved, identityResults)
+            else -> EnrichmentResult.NotFound(type, "no_composite_handler")
+        }
+    }
+
+    private fun synthesizeTimeline(
+        resolved: Map<EnrichmentType, EnrichmentResult>,
+        identityResults: Map<EnrichmentType, EnrichmentResult>,
+    ): EnrichmentResult {
+        // Find metadata from identity resolution (any result with Metadata data)
+        val metadata = identityResults.values.firstOrNull {
+            it is EnrichmentResult.Success && it.data is EnrichmentData.Metadata
+        }
+        val discography = resolved[EnrichmentType.ARTIST_DISCOGRAPHY]
+        val bandMembers = resolved[EnrichmentType.BAND_MEMBERS]
+
+        val timeline = TimelineSynthesizer.synthesize(metadata, discography, bandMembers)
+        return EnrichmentResult.Success(
+            type = EnrichmentType.ARTIST_TIMELINE,
+            data = timeline,
+            provider = "timeline_synthesizer",
+            confidence = ConfidenceCalculator.authoritative(),
+        )
     }
 
     /**
@@ -210,6 +260,15 @@ class DefaultEnrichmentEngine(
 
     companion object {
         private const val TAG = "EnrichmentEngine"
+
+        /** Maps composite EnrichmentTypes to their required sub-type dependencies. */
+        private val COMPOSITE_DEPENDENCIES = mapOf(
+            EnrichmentType.ARTIST_TIMELINE to setOf(
+                EnrichmentType.ARTIST_DISCOGRAPHY,
+                EnrichmentType.BAND_MEMBERS,
+            ),
+        )
+
         private val IDENTITY_TYPES = setOf(
             EnrichmentType.GENRE, EnrichmentType.LABEL, EnrichmentType.RELEASE_DATE,
             EnrichmentType.RELEASE_TYPE, EnrichmentType.COUNTRY,
