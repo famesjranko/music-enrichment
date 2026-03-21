@@ -53,7 +53,13 @@ class CoverArtArchiveApi(
                     if (value != null) thumbnails[key] = value
                 }
             }
-            CoverArtArchiveImage(front = front, url = imageUrl, thumbnails = thumbnails)
+            val typesArray = obj.optJSONArray("types")
+            val types = if (typesArray != null) {
+                (0 until typesArray.length()).map { j -> typesArray.getString(j) }
+            } else {
+                emptyList()
+            }
+            CoverArtArchiveImage(front = front, url = imageUrl, thumbnails = thumbnails, types = types)
         }
         return CoverArtArchiveImageList(images)
     }
@@ -77,4 +83,5 @@ data class CoverArtArchiveImage(
     val front: Boolean,
     val url: String,
     val thumbnails: Map<String, String>,
+    val types: List<String> = emptyList(),
 )

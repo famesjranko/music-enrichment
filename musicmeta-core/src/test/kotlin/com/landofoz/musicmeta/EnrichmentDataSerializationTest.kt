@@ -137,6 +137,24 @@ class EnrichmentDataSerializationTest {
     }
 
     @Test
+    fun `ALBUM_ART_BACK is a valid EnrichmentType with 90-day TTL`() {
+        // Given -- the new ALBUM_ART_BACK type
+        val type = EnrichmentType.ALBUM_ART_BACK
+
+        // Then -- it exists and has 90-day TTL
+        assertEquals(90L * 24 * 60 * 60 * 1000, type.defaultTtlMs)
+    }
+
+    @Test
+    fun `ALBUM_BOOKLET is a valid EnrichmentType with 90-day TTL`() {
+        // Given -- the new ALBUM_BOOKLET type
+        val type = EnrichmentType.ALBUM_BOOKLET
+
+        // Then -- it exists and has 90-day TTL
+        assertEquals(90L * 24 * 60 * 60 * 1000, type.defaultTtlMs)
+    }
+
+    @Test
     fun `Artwork with sizes survives round-trip serialization`() {
         // Given
         val original = EnrichmentData.Artwork(

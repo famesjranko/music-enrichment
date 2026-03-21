@@ -42,4 +42,6 @@ enum class EnrichmentType(val defaultTtlMs: Long) {
 
     // Additional artwork
     ARTIST_BANNER(90L * 24 * 60 * 60 * 1000),
+    ALBUM_ART_BACK(90L * 24 * 60 * 60 * 1000),
+    ALBUM_BOOKLET(90L * 24 * 60 * 60 * 1000),
 }
