@@ -35,8 +35,8 @@ Requirements for v0.5.0 milestone. Each maps to roadmap phases.
 
 ### Genre
 
-- [ ] **GENR-01**: Genre results carry per-tag confidence scores via GenreTag data class
-- [ ] **GENR-02**: GenreMerger normalizes, deduplicates, and scores tags from multiple providers
+- [x] **GENR-01**: Genre results carry per-tag confidence scores via GenreTag data class
+- [x] **GENR-02**: GenreMerger normalizes, deduplicates, and scores tags from multiple providers
 - [ ] **GENR-03**: ProviderChain supports mergeable types (collect all results instead of short-circuiting)
 - [ ] **GENR-04**: Backward compatible — genres list still populated alongside genreTags
 
@@ -84,8 +84,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-01 | Phase 9 | Complete |
 | TIME-02 | Phase 9 | Complete |
 | TIME-03 | Phase 9 | Complete |
-| GENR-01 | Phase 10 | Pending |
-| GENR-02 | Phase 10 | Pending |
+| GENR-01 | Phase 10 | Complete |
+| GENR-02 | Phase 10 | Complete |
 | GENR-03 | Phase 10 | Pending |
 | GENR-04 | Phase 10 | Pending |
 | PROV-01 | Phase 11 | Pending |
