@@ -108,6 +108,15 @@ None - no external service configuration required.
 - Phase 8 (Release Editions) can use `discogsMasterId` for the Discogs master release endpoint
 - Phase 9 (Artist Timeline) can use ListenBrainz ARTIST_DISCOGRAPHY at priority 50 via the provider chain
 
+## Self-Check: PASSED
+
+- FOUND: ListenBrainzProvider.kt
+- FOUND: DiscogsProvider.kt (with discogsReleaseId, discogsMasterId, buildResolvedIdentifiers)
+- FOUND: DiscogsModels.kt (with releaseId, masterId fields)
+- FOUND: 06-04-SUMMARY.md
+- FOUND commit 4d4cf02 (Task 1)
+- FOUND commit 7da3e6a (Task 2)
+
 ---
 *Phase: 06-tech-debt-cleanup*
 *Completed: 2026-03-22*
