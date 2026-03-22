@@ -217,50 +217,112 @@ class EnrichmentShowcaseTest {
             }
     }
 
-    // --- 8. Coverage gaps ---
+    // --- 8. Coverage matrix ---
 
     @Test
-    fun `08 - coverage gaps and wishlist`() {
-        banner("COVERAGE GAPS & WISHLIST")
-        println("""
-  CURRENT types (${EnrichmentType.entries.size}):
-    Artwork:       ALBUM_ART, ALBUM_ART_BACK, ALBUM_BOOKLET, ARTIST_PHOTO,
-                   ARTIST_BACKGROUND, ARTIST_LOGO, ARTIST_BANNER, CD_ART
-    Metadata:      GENRE, LABEL, RELEASE_DATE, RELEASE_TYPE, COUNTRY,
-                   BAND_MEMBERS, ARTIST_DISCOGRAPHY, ALBUM_TRACKS, ALBUM_METADATA
-    Text:          ARTIST_BIO, LYRICS_SYNCED, LYRICS_PLAIN
-    Relationships: SIMILAR_ARTISTS, SIMILAR_TRACKS, ARTIST_LINKS
-    Stats:         ARTIST_POPULARITY, TRACK_POPULARITY
+    fun `08 - coverage matrix`() {
+        banner("COVERAGE MATRIX (v0.5.0)")
+        val providers = engine.getProviders()
+        var multiCount = 0
+        EnrichmentType.entries.forEach { type ->
+            val supporting = providers.filter { p ->
+                p.capabilities.any { it.type == type }
+            }
+            if (supporting.size >= 2) multiCount++
+            val marker = when {
+                supporting.size >= 3 -> "M+"
+                supporting.size == 2 -> "M "
+                supporting.size == 1 -> "S "
+                else -> "- "
+            }
+            val providerList = supporting.joinToString(", ") { p ->
+                val cap = p.capabilities.first { it.type == type }
+                "${p.displayName}(${cap.priority})"
+            }
+            println("  $marker %-22s %s".format(type.name, providerList))
+        }
+        println("\n  M+/M = multi-provider, S = single provider, - = no provider")
+        println("  $multiCount/${EnrichmentType.entries.size} types have multi-provider coverage")
+        println("\n  ENGINE FEATURES (v0.5.0):")
+        println("    - GENRE uses GenreMerger (multi-provider merge, not short-circuit)")
+        println("    - ARTIST_TIMELINE is composite (auto-resolves DISCOGRAPHY + BAND_MEMBERS)")
+        println("    - All 11 providers use HttpResult/ErrorKind uniformly")
+    }
 
-  MULTI-PROVIDER COVERAGE (v0.4.0):
-    - ALBUM_ART          -> CAA, Fanart.tv, Deezer, iTunes (all with multi-size)
-    - ARTIST_PHOTO       -> Wikidata, Fanart.tv, Wikipedia (page media-list)
-    - BAND_MEMBERS       -> MusicBrainz (artist-rels), Discogs (artist endpoint)
-    - ARTIST_DISCOGRAPHY -> MusicBrainz (browse release-groups), Deezer (artist albums)
-    - ALBUM_TRACKS       -> MusicBrainz (media array), Deezer (album tracks)
-    - ALBUM_METADATA     -> Deezer, Discogs, iTunes (trackCount, label, genres)
-    - TRACK_POPULARITY   -> Last.fm (track.getInfo), ListenBrainz (batch recording)
-    - ARTIST_POPULARITY  -> Last.fm, ListenBrainz (batch artist)
+    // --- 9. v0.5.0 feature spotlight ---
 
-  THIN COVERAGE (single provider, often behind API key):
-    - ARTIST_BACKGROUND  -> Fanart.tv only (needs key + MBID)
-    - ARTIST_LOGO        -> Fanart.tv only (needs key + MBID)
-    - ARTIST_BANNER      -> Fanart.tv only (needs key + MBID)
-    - CD_ART             -> Fanart.tv only (needs key + MBID)
-    - SIMILAR_ARTISTS    -> Last.fm only (needs key)
-    - SIMILAR_TRACKS     -> Last.fm only (track.getSimilar)
+    @Test
+    fun `09 - v0_5_0 feature spotlight`() = runBlocking {
+        banner("v0.5.0 FEATURES")
 
-  NOT YET IMPLEMENTED (wishlist):
-    - CREDITS            -> producers, performers, composers (MusicBrainz, Discogs)
-    - RELEASE_EDITIONS   -> all editions/pressings of an album (MusicBrainz)
-    - ARTIST_TIMELINE    -> formed, albums, member changes, hiatus, reunion
-    - GENRE_DEEP_DIVE    -> merged/deduplicated tags with confidence scoring
+        // Credits: Bohemian Rhapsody (well-known credits)
+        println("  --- CREDITS: Bohemian Rhapsody by Queen ---")
+        val creditResults = engine.enrich(
+            EnrichmentRequest.forTrack("Bohemian Rhapsody", "Queen", album = "A Night at the Opera"),
+            setOf(EnrichmentType.CREDITS),
+        )
+        val credits = creditResults[EnrichmentType.CREDITS]
+        if (credits is EnrichmentResult.Success) {
+            println("    provider: ${credits.provider}, conf=${credits.confidence}")
+            val data = credits.data as EnrichmentData.Credits
+            val byCategory = data.credits.groupBy { it.roleCategory ?: "other" }
+            byCategory.forEach { (category, members) ->
+                println("    [$category]")
+                members.forEach { println("      ${it.name} — ${it.role}") }
+            }
+        } else printSingleResult(EnrichmentType.CREDITS, credits)
 
-  TECH DEBT (v0.4.0):
-    - ErrorKind enum exists but no provider categorizes errors yet
-    - HttpResult/fetchJsonResult() exists but no provider uses it yet
-    - ListenBrainz ARTIST_DISCOGRAPHY plumbing exists but not wired
-        """.trimIndent())
+        // Release Editions: OK Computer (many pressings)
+        println("\n  --- RELEASE EDITIONS: OK Computer by Radiohead ---")
+        val editionResults = engine.enrich(
+            EnrichmentRequest.forAlbum("OK Computer", "Radiohead"),
+            setOf(EnrichmentType.RELEASE_EDITIONS),
+        )
+        val editions = editionResults[EnrichmentType.RELEASE_EDITIONS]
+        if (editions is EnrichmentResult.Success) {
+            println("    provider: ${editions.provider}, conf=${editions.confidence}")
+            val data = editions.data as EnrichmentData.ReleaseEditions
+            println("    ${data.editions.size} editions found")
+            data.editions.take(8).forEach { e ->
+                println("    - %-30s %-8s %-4s %s".format(
+                    e.title.take(30), e.format ?: "-", e.country ?: "-", e.year ?: "-",
+                ))
+            }
+            if (data.editions.size > 8) println("    ... and ${data.editions.size - 8} more")
+        } else printSingleResult(EnrichmentType.RELEASE_EDITIONS, editions)
+
+        // Artist Timeline: Radiohead
+        println("\n  --- ARTIST TIMELINE: Radiohead ---")
+        val timelineResults = engine.enrich(
+            EnrichmentRequest.forArtist("Radiohead"),
+            setOf(EnrichmentType.ARTIST_TIMELINE),
+        )
+        val timeline = timelineResults[EnrichmentType.ARTIST_TIMELINE]
+        if (timeline is EnrichmentResult.Success) {
+            println("    provider: ${timeline.provider}, conf=${timeline.confidence}")
+            val data = timeline.data as EnrichmentData.ArtistTimeline
+            println("    ${data.events.size} events")
+            data.events.forEach { e ->
+                val entity = e.relatedEntity?.let { " ($it)" } ?: ""
+                println("    %-12s %-18s %s%s".format(e.date, e.type, e.description.take(50), entity))
+            }
+        } else printSingleResult(EnrichmentType.ARTIST_TIMELINE, timeline)
+
+        // Genre merge: Radiohead
+        println("\n  --- GENRE MERGE: Radiohead ---")
+        val genreResults = engine.enrich(
+            EnrichmentRequest.forArtist("Radiohead"),
+            setOf(EnrichmentType.GENRE),
+        )
+        val genre = genreResults[EnrichmentType.GENRE]
+        if (genre is EnrichmentResult.Success) {
+            println("    provider: ${genre.provider}, conf=${genre.confidence}")
+            val data = genre.data as EnrichmentData.Metadata
+            data.genreTags?.forEach { tag ->
+                println("    %-28s conf=%.2f  sources=%s".format(tag.name, tag.confidence, tag.sources))
+            } ?: println("    genres: ${data.genres}")
+            println("    backward-compat genres: ${data.genres?.take(5)}")
+        } else printSingleResult(EnrichmentType.GENRE, genre)
     }
 
     // --- Helpers ---
@@ -303,8 +365,8 @@ class EnrichmentShowcaseTest {
                 }
                 is EnrichmentResult.Error -> {
                     errors++
-                    "  ! %-20s %-14s ERROR: %s".format(
-                        type.name, result.provider, result.message.take(50),
+                    "  ! %-20s %-14s ERROR(%s): %s".format(
+                        type.name, result.provider, result.errorKind, result.message.take(50),
                     )
                 }
                 null -> {
@@ -321,7 +383,9 @@ class EnrichmentShowcaseTest {
         is EnrichmentData.Artwork ->
             "url=${data.url.take(70)}${if (data.url.length > 70) "..." else ""}"
         is EnrichmentData.Metadata -> listOfNotNull(
-            data.genres?.let { "genres=${it.take(4)}" },
+            data.genreTags?.let { tags ->
+                "tags=${tags.take(3).joinToString(", ") { "${it.name}(%.2f,${it.sources})".format(it.confidence) }}"
+            } ?: data.genres?.let { "genres=${it.take(4)}" },
             data.label?.let { "label=$it" },
             data.releaseDate, data.releaseType, data.country,
         ).joinToString(" | ")
@@ -349,10 +413,35 @@ class EnrichmentShowcaseTest {
             data.tracks.take(4).joinToString(", ") { "${it.title}(%.1f)".format(it.matchScore) }
         is EnrichmentData.ArtistLinks ->
             data.links.take(4).joinToString(", ") { "${it.type}=${it.url.take(40)}" }
-        is EnrichmentData.Credits ->
-            data.credits.take(4).joinToString(", ") { "${it.name}(${it.role})" }
-        is EnrichmentData.ReleaseEditions -> "${data.editions.size} editions"
-        is EnrichmentData.ArtistTimeline -> "${data.events.size} timeline events"
+        is EnrichmentData.Credits -> buildString {
+            val byCategory = data.credits.groupBy { it.roleCategory ?: "other" }
+            append(byCategory.entries.joinToString(", ") { "${it.value.size} ${it.key}" })
+            append(" | ")
+            append(data.credits.take(4).joinToString(", ") { "${it.name}(${it.role})" })
+        }
+        is EnrichmentData.ReleaseEditions -> buildString {
+            append("${data.editions.size} editions")
+            val formats = data.editions.mapNotNull { it.format }.distinct().take(4)
+            if (formats.isNotEmpty()) append(" formats=$formats")
+            val countries = data.editions.mapNotNull { it.country }.distinct().take(4)
+            if (countries.isNotEmpty()) append(" countries=$countries")
+        }
+        is EnrichmentData.ArtistTimeline -> buildString {
+            val byType = data.events.groupBy { it.type }
+            append("${data.events.size} events (${byType.entries.joinToString(", ") { "${it.value.size} ${it.key}" }})")
+            data.events.firstOrNull()?.let { append(" first=${it.date}:${it.type}") }
+        }
+    }
+
+    private fun printSingleResult(type: EnrichmentType, result: EnrichmentResult?) {
+        val line = when (result) {
+            is EnrichmentResult.Success -> "    SUCCESS (${result.provider}, conf=${result.confidence})"
+            is EnrichmentResult.NotFound -> "    NOT FOUND (${result.provider})"
+            is EnrichmentResult.RateLimited -> "    RATE LIMITED (${result.provider})"
+            is EnrichmentResult.Error -> "    ERROR(${result.errorKind}): ${result.message.take(60)}"
+            null -> "    NO PROVIDER for ${type.name}"
+        }
+        println(line)
     }
 
     companion object {
